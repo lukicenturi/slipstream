@@ -3,10 +3,7 @@
 import { useConnection } from "wagmi";
 
 import { useAgent } from "@/hooks/useAgent";
-import { useTraderState } from "@/hooks/useTrader";
-
-/** The account refreshes this often while the sheet is open. */
-export const ACCOUNT_REFRESH_MS = 10_000;
+import { ACCOUNT_REFRESH_MS, useTraderState } from "@/hooks/useTrader";
 
 export type TradingStatus = "disconnected" | "connected" | "agent-ready";
 

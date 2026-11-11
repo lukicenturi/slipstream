@@ -8,7 +8,7 @@ Read `PLAN.md` first. Work on one phase at a time and stop when its "Done when" 
 
 ## Hard rules
 
-- Production is read-only. Trading exists only on Hyperliquid testnet behind `NEXT_PUBLIC_TRADING_MODE=testnet`. Never create a mainnet exchange client. Never ask for or store a user's wallet key; only a generated agent key may be stored, in localStorage, for testnet.
+- Production is read-only. A wallet may be connected on mainnet only to read its address; the app never requests a signature there. Trading exists only on Hyperliquid testnet behind `NEXT_PUBLIC_TRADING_MODE=testnet`. Never create a mainnet exchange client. Never ask for or store a user's wallet key; only a generated agent key may be stored, in localStorage, for testnet.
 - The raw leaderboard file is fetched server-side only, trimmed and cached. Never fetch it from the browser.
 - The only server-side state is the push subscription store in Cloudflare D1 (push endpoint, network, watched addresses, threshold, optional labels). No accounts and no other user data. The push Worker reads Hyperliquid over REST; the app still uses one shared WebSocket.
 - Before writing a schema, `curl` the endpoint, save the response in `fixtures/`, and derive the zod schema from it. Do not guess field names.

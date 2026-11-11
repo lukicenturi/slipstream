@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * The account page. A thin server page around the client view: the saved
- * address lives in localStorage and the wallet lives in the browser.
+ * The account page. A thin server page around the client view, because the
+ * wallet lives in the browser.
  */
 export default function AccountPage() {
   return (

@@ -5,8 +5,10 @@ import dynamic from "next/dynamic";
 import { SkeletonRows } from "@/components/shared/States";
 
 /*
- * Testnet-only components in their own chunks. The read-only build never
- * renders them, so it never downloads wagmi or the exchange SDK.
+ * Wallet and trading components in their own chunks. The wallet button
+ * shows in every build (read-only on mainnet). The testnet sheet form shows
+ * only in the testnet build, so the mainnet build never downloads the
+ * exchange SDK.
  */
 
 export const LazyWalletButton = dynamic(() => import("./WalletButton"), {

@@ -1,15 +1,14 @@
 "use client";
 
-import { TRADING_ENABLED } from "@/lib/trading/config";
+import { TRADING_ENABLED, WALLET_ENABLED } from "@/lib/trading/config";
 
-import { LazyTestnetAccount } from "./lazy";
-import { MyAddressSection } from "./MyAddressSection";
+import { LazyWalletAccount } from "./lazy";
 
 /**
- * The account page. Testnet build: the connected wallet's testnet account,
- * then the saved address. Read-only build: the saved address only. Both
- * read the network of the build. The page only reads; it sends no
- * exchange request.
+ * The account page, in both builds: the connected wallet's account on the
+ * network of the build. The page only reads; it sends no exchange request.
+ * On mainnet the wallet is read-only: the app reads its address and never
+ * asks for a signature.
  */
 export function AccountView() {
   return (
@@ -18,12 +17,11 @@ export function AccountView() {
         <h1 className="text-lg font-semibold text-foreground">My account</h1>
         <p className="text-xs text-muted-foreground">
           {TRADING_ENABLED
-            ? "Your testnet wallet and your saved address, with testnet data."
-            : "Your saved address and its profile."}
+            ? "Your testnet wallet's account, with testnet data."
+            : "Your wallet's account, read-only."}
         </p>
       </div>
-      {TRADING_ENABLED ? <LazyTestnetAccount /> : null}
-      <MyAddressSection title="My address" />
+      {WALLET_ENABLED ? <LazyWalletAccount /> : null}
     </div>
   );
 }

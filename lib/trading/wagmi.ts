@@ -4,11 +4,14 @@ import { injected } from "wagmi/connectors/injected";
 import { walletConnect } from "wagmi/connectors/walletConnect";
 
 /*
- * Wallet connection for the testnet trading build only.
+ * Wallet connection for every build. On mainnet no action ever signs: the
+ * app only reads the connected address, and no code path there requests a
+ * signature or creates an exchange client. In the testnet build the wallet
+ * also signs approveAgent once.
  * The chains are the wallet's EVM chains. They are used only for the
- * EIP-712 signature domain of approveAgent. Hyperliquid testnet itself is
- * not an EVM chain here. "mainnet" is Ethereum mainnet, where many wallets
- * start; it does not enable any Hyperliquid mainnet action.
+ * EIP-712 signature domain of approveAgent (testnet build). Hyperliquid
+ * itself is not an EVM chain here. "mainnet" is Ethereum mainnet, where many
+ * wallets start; it does not enable any Hyperliquid mainnet action.
  */
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;

@@ -7,7 +7,7 @@ import { CopyTradeProvider } from "@/components/copy-trade/CopyTradeProvider";
 import { MidsFeeder } from "@/components/providers/MidsFeeder";
 import { PushSync } from "@/components/providers/PushSync";
 import { WatchlistTracker } from "@/components/providers/WatchlistTracker";
-import { TradingProviders } from "@/components/trading/TradingProviders";
+import { WalletProviders } from "@/components/trading/WalletProviders";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -23,8 +23,8 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* wagmi in a testnet build; nothing in the read-only build. */}
-      <TradingProviders>
+      {/* wagmi in every build: read-only on mainnet, trading on testnet. */}
+      <WalletProviders>
         <TooltipProvider>
           <MidsFeeder />
           <CopyTradeProvider>
@@ -41,7 +41,7 @@ export function Providers({ children }: { children: ReactNode }) {
             mobileOffset={{ bottom: "calc(16px + var(--bottom-nav-space))" }}
           />
         </TooltipProvider>
-      </TradingProviders>
+      </WalletProviders>
     </QueryClientProvider>
   );
 }

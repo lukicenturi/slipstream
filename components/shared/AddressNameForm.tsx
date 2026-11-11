@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircleIcon } from "lucide-react";
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { shortAddress } from "@/lib/format";
@@ -31,7 +31,7 @@ export interface ResolvedInput {
  * An address, `.eth` name or `.hl` name input with a submit button. Names
  * resolve on our server (/api/resolve). On success the input clears and
  * `onResolved` runs; a string it returns shows as the status line.
- * The watchlist form and the account page use it.
+ * The watchlist form uses it.
  */
 export function AddressNameForm({
   onResolved,
@@ -42,8 +42,6 @@ export function AddressNameForm({
   formTestId,
   submitTestId,
   submitClassName,
-  autoFocus = false,
-  children,
 }: {
   onResolved: (input: ResolvedInput) => string | null;
   /** The visually hidden label of the input. */
@@ -54,9 +52,6 @@ export function AddressNameForm({
   formTestId?: string;
   submitTestId?: string;
   submitClassName?: string;
-  autoFocus?: boolean;
-  /** Extra buttons after the submit button (for example "Cancel"). */
-  children?: ReactNode;
 }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -125,8 +120,6 @@ export function AddressNameForm({
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
-          // Only after a user action ("Change"), never on page load.
-          autoFocus={autoFocus}
           // Read-only, not disabled, so the input keeps focus during a lookup.
           readOnly={resolving}
           aria-disabled={resolving ? true : undefined}
@@ -148,7 +141,6 @@ export function AddressNameForm({
           ) : null}
           {submitLabel}
         </Button>
-        {children}
       </div>
       {resolving ? (
         <span role="status" className="sr-only">

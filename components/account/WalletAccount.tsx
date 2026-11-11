@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpRightIcon, CopyIcon, ExternalLinkIcon, WalletIcon } from "lucide-react";
+import Link from "next/link";
 import { useMemo } from "react";
 import { useConnection } from "wagmi";
 
@@ -18,7 +19,7 @@ import { ConnectWalletPopover } from "@/components/trading/ConnectWallet";
 import { Button } from "@/components/ui/button";
 import { isLoadingBalances, useAccountBalances } from "@/hooks/useAccountBalances";
 import { useLiveUnrealizedPnl } from "@/hooks/useLiveUnrealizedPnl";
-import { useTraderFills, useTraderState } from "@/hooks/useTrader";
+import { ACCOUNT_REFRESH_MS, useTraderFills, useTraderState } from "@/hooks/useTrader";
 import {
   builderDexWithUsdc,
   collectPositions,
@@ -28,19 +29,61 @@ import {
 import { DUST_ACCOUNT_VALUE } from "@/lib/calc/positions";
 import { formatUsd, shortAddress } from "@/lib/format";
 import { explorerAddressUrl, HL } from "@/lib/network";
-import { NETWORK_URLS, TESTNET } from "@/lib/trading/config";
+import {
+  NETWORK,
+  NETWORK_URLS,
+  networkLabel,
+  otherNetwork,
+  TESTNET,
+  TRADING_ENABLED,
+} from "@/lib/trading/config";
 
-const ACCOUNT_REFRESH_MS = 10_000;
 const FILLS_REFRESH_MS = 30_000;
 
+/** The texts of each build. The testnet texts are the ones from before Phase 4j. */
+const COPY = TRADING_ENABLED
+  ? {
+      title: "My testnet account",
+      promptTitle: "Connect a wallet to see your testnet account",
+      promptDescription:
+        "Slipstream reads your testnet balance, positions and fills. It never asks for your wallet key.",
+      errorTitle: "The testnet account did not load",
+      errorDescription: "The Hyperliquid testnet info service did not answer.",
+      positionsTitle: "Testnet positions",
+      positionsEmptyTitle: "No open testnet positions",
+      positionsEmptyDescription: "This wallet holds no perps on testnet.",
+      balancesTitle: "Testnet balances",
+      fillsTitle: "Testnet fills",
+      fillsEmptyTitle: "No testnet fills yet",
+      fillsEmptyDescription: "Orders that you place on testnet show here.",
+    }
+  : {
+      title: "My wallet account",
+      promptTitle: "Connect a wallet to see your account",
+      promptDescription: "Slipstream only reads your address.",
+      errorTitle: "The account did not load",
+      errorDescription: "The Hyperliquid info service did not answer.",
+      positionsTitle: "Positions",
+      positionsEmptyTitle: "No open positions",
+      positionsEmptyDescription: "This wallet holds no perps on Hyperliquid.",
+      balancesTitle: "Balances",
+      fillsTitle: "Fills",
+      fillsEmptyTitle: "No fills yet",
+      fillsEmptyDescription: "This wallet has no fills on Hyperliquid.",
+    };
+
+const OTHER_NETWORK = otherNetwork(NETWORK);
+
 /**
- * The connected wallet's testnet account (testnet build only; it needs
- * wagmi, so it loads lazily). It uses the same queries as the profile at
+ * The connected wallet's account, in every build (it needs wagmi, so it
+ * loads lazily). It uses the same queries as the profile at
  * /trader/<address> and the prices of the shared socket, so both pages show
  * the same numbers, including builder perp exchanges and spot. It only
- * reads: the info endpoint, never the exchange.
+ * reads: the info endpoint, never the exchange. On mainnet it also hides
+ * the trading notes (faucet, USDC transfer). lib/wallet-guard.test.ts checks
+ * that it imports no exchange code.
  */
-export default function TestnetAccount() {
+export default function WalletAccount() {
   const connection = useConnection();
   const address = connection.address?.toLowerCase();
 
@@ -58,17 +101,14 @@ export default function TestnetAccount() {
 function ConnectPrompt() {
   return (
     <section
-      aria-labelledby="testnet-account-title"
-      data-testid="testnet-account-connect"
+      aria-labelledby="wallet-account-title"
+      data-testid="wallet-account-connect"
       className="rounded-lg border"
     >
-      <h2 id="testnet-account-title" className="sr-only">
-        My testnet account
+      <h2 id="wallet-account-title" className="sr-only">
+        {COPY.title}
       </h2>
-      <EmptyState
-        title="Connect a wallet to see your testnet account"
-        description="Slipstream reads your testnet balance, positions and fills. It never asks for your wallet key."
-      >
+      <EmptyState title={COPY.promptTitle} description={COPY.promptDescription}>
         <ConnectWalletPopover align="center">
           <Button
             type="button"
@@ -81,6 +121,17 @@ function ConnectPrompt() {
             Connect wallet
           </Button>
         </ConnectWalletPopover>
+        <p data-testid="account-no-wallet" className="mt-2 text-2xs text-muted-foreground">
+          No wallet? Search any address in the header, or track it in the{" "}
+          <Link
+            href="/watchlist"
+            prefetch={false}
+            className="rounded-sm text-brand underline-offset-2 hover:underline"
+          >
+            watchlist
+          </Link>
+          .
+        </p>
       </EmptyState>
     </section>
   );
@@ -99,9 +150,11 @@ function ConnectedAccount({ address }: { address: string }) {
   const perpsUsd = accounts.reduce((sum, entry) => sum + entry.accountValue, 0);
   const marginUsed = accounts.reduce((sum, entry) => sum + entry.marginUsed, 0);
   const hasSpot = (balances.spot.data ?? []).some((balance) => balance.total > 0);
-  // Orders use the main perps USDC only.
-  const showTransferNote = state !== undefined && state.withdrawable < 0.01 && builderUsdc !== null;
+  // Orders use the main perps USDC only. Both notes are about trading, so mainnet hides them.
+  const showTransferNote =
+    TRADING_ENABLED && state !== undefined && state.withdrawable < 0.01 && builderUsdc !== null;
   const showNoFunds =
+    TRADING_ENABLED &&
     state !== undefined &&
     !isLoadingBalances(balances) &&
     perpsUsd < DUST_ACCOUNT_VALUE &&
@@ -109,20 +162,20 @@ function ConnectedAccount({ address }: { address: string }) {
 
   return (
     <section
-      aria-labelledby="testnet-account-title"
-      data-testid="testnet-account"
+      aria-labelledby="wallet-account-title"
+      data-testid="wallet-account"
       className="flex flex-col gap-3"
     >
       <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <Blockie address={address} size={32} />
           <div className="min-w-0 flex-1">
-            <h2 id="testnet-account-title" className="text-sm font-semibold text-foreground">
-              My testnet account
+            <h2 id="wallet-account-title" className="text-sm font-semibold text-foreground">
+              {COPY.title}
             </h2>
             <div className="flex min-w-0 items-center gap-1">
               <span
-                data-testid="testnet-account-address"
+                data-testid="wallet-account-address"
                 title={address}
                 className="truncate font-mono text-xs text-muted-foreground"
               >
@@ -145,7 +198,7 @@ function ConnectedAccount({ address }: { address: string }) {
                   rel="noopener noreferrer"
                   aria-label={`Open in the ${HL.explorerLabel}`}
                   title={HL.explorerLabel}
-                  data-testid="testnet-explorer-link"
+                  data-testid="wallet-explorer-link"
                 >
                   <ExternalLinkIcon aria-hidden="true" />
                 </a>
@@ -154,8 +207,11 @@ function ConnectedAccount({ address }: { address: string }) {
           </div>
         </div>
         <Button asChild variant="outline" size="sm">
-          <a href={`${NETWORK_URLS.mainnet}/trader/${address}`} data-testid="open-on-mainnet-link">
-            Open on Mainnet
+          <a
+            href={`${NETWORK_URLS[OTHER_NETWORK]}/trader/${address}`}
+            data-testid="open-on-other-network-link"
+          >
+            Open on {networkLabel(OTHER_NETWORK)}
             <ArrowUpRightIcon aria-hidden="true" />
           </a>
         </Button>
@@ -164,24 +220,27 @@ function ConnectedAccount({ address }: { address: string }) {
       {account.status === "error" ? (
         <div className="rounded-lg border">
           <ErrorState
-            title="The testnet account did not load"
-            description="The Hyperliquid testnet info service did not answer."
+            title={COPY.errorTitle}
+            description={COPY.errorDescription}
             onRetry={() => void account.refetch()}
           />
         </div>
       ) : (
-        <dl data-testid="testnet-stats" className={STAT_GRID}>
+        <dl data-testid="wallet-stats" className={STAT_GRID}>
           <AccountValueStat balances={balances} />
-          <Stat label="USDC available" loading={pending}>
+          {/* Testnet frames this cell for orders ("USDC available"); mainnet only reads. */}
+          <Stat label={TRADING_ENABLED ? "USDC available" : "Withdrawable"} loading={pending}>
             {state ? (
               <>
                 <StatValue>
-                  <span data-testid="testnet-usdc-available">{formatUsd(state.withdrawable)}</span>
+                  <span data-testid="wallet-withdrawable">{formatUsd(state.withdrawable)}</span>
                 </StatValue>
                 <StatNote>
                   {builderUsdc && showTransferNote
                     ? `${formatUsd(builderUsdc.withdrawable, { compact: true })} in ${builderUsdc.dex}`
-                    : "Perps, withdrawable"}
+                    : TRADING_ENABLED
+                      ? "Perps, withdrawable"
+                      : "Main perps account"}
                 </StatNote>
               </>
             ) : null}
@@ -197,7 +256,7 @@ function ConnectedAccount({ address }: { address: string }) {
             ) : null}
           </Stat>
           <Stat label="Unrealized PnL" loading={pending}>
-            {state ? <LiveTestnetPnl positions={positions} /> : null}
+            {state ? <LivePnl positions={positions} /> : null}
           </Stat>
         </dl>
       )}
@@ -233,25 +292,25 @@ function ConnectedAccount({ address }: { address: string }) {
         positions={state ? positions : undefined}
         status={account.status}
         onRetry={() => void account.refetch()}
-        title="Testnet positions"
-        titleId="testnet-positions-title"
+        title={COPY.positionsTitle}
+        titleId="wallet-positions-title"
         showCopy={false}
-        emptyTitle="No open testnet positions"
-        emptyDescription="This wallet holds no perps on testnet."
+        emptyTitle={COPY.positionsEmptyTitle}
+        emptyDescription={COPY.positionsEmptyDescription}
       />
       <BalancesPanel
         balances={balances}
-        title="Testnet balances"
-        titleId="testnet-balances-title"
+        title={COPY.balancesTitle}
+        titleId="wallet-balances-title"
       />
       <RecentFills
         fills={fills.data}
         status={fills.status}
         onRetry={() => void fills.refetch()}
-        title="Testnet fills"
-        titleId="testnet-fills-title"
-        emptyTitle="No testnet fills yet"
-        emptyDescription="Orders that you place on testnet show here."
+        title={COPY.fillsTitle}
+        titleId="wallet-fills-title"
+        emptyTitle={COPY.fillsEmptyTitle}
+        emptyDescription={COPY.fillsEmptyDescription}
         className="max-h-[480px]"
       />
     </section>
@@ -259,12 +318,12 @@ function ConnectedAccount({ address }: { address: string }) {
 }
 
 /** Re-renders on every tick of a position coin, so it stays a small leaf. */
-function LiveTestnetPnl({ positions }: { positions: readonly AccountPosition[] }) {
+function LivePnl({ positions }: { positions: readonly AccountPosition[] }) {
   const pnl = useLiveUnrealizedPnl(positions);
   return (
     <>
       <StatValue className={signTone(pnl)}>
-        <span data-testid="testnet-unrealized-pnl">{formatUsd(pnl, { signed: true })}</span>
+        <span data-testid="wallet-unrealized-pnl">{formatUsd(pnl, { signed: true })}</span>
       </StatValue>
       <StatNote>At live mids</StatNote>
     </>

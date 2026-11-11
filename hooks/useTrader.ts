@@ -11,6 +11,9 @@ import { getClearinghouseState, getPortfolio, getUserFills } from "@/lib/hyperli
  * address. The address must be lower-case.
  */
 
+/** The account refreshes this often while the sheet, the wallet popover or the account page shows it. */
+export const ACCOUNT_REFRESH_MS = 10_000;
+
 export function traderStateKey(address: string | undefined) {
   return ["trader", address, "clearinghouseState"] as const;
 }

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { LazyWalletButton } from "@/components/trading/lazy";
-import { TRADING_ENABLED } from "@/lib/trading/config";
+import { WALLET_ENABLED } from "@/lib/trading/config";
 
 import { AddressSearch } from "./AddressSearch";
 import { ConnectionStatus } from "./ConnectionStatus";
@@ -27,7 +27,8 @@ export function Header() {
         <ConnectionStatus className="ml-auto shrink-0" compactOnMobile />
         <NetworkSwitch className="inline-flex sm:hidden" />
         <NotificationBell />
-        {TRADING_ENABLED ? <LazyWalletButton /> : null}
+        {/* Every build. Read-only on mainnet: it only reads the address. */}
+        {WALLET_ENABLED ? <LazyWalletButton /> : null}
       </div>
     </header>
   );

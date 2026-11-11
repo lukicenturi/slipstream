@@ -28,6 +28,15 @@ export function getTradingMode(): TradingMode {
 /** True only in the testnet build. Components use it to pick the demo or the testnet UI. */
 export const TRADING_ENABLED: boolean = NETWORK === "testnet";
 
+/**
+ * True in every build: the header wallet button, the wallet providers and
+ * the connected account view show on both hosts. The wallet is read-only
+ * unless TRADING_ENABLED: on mainnet the app only reads the address. It
+ * never requests a signature and never creates an exchange client there.
+ * Anything that signs or trades stays behind TRADING_ENABLED.
+ */
+export const WALLET_ENABLED: boolean = true;
+
 export class TradingDisabledError extends Error {
   constructor() {
     super("Trading is disabled. Only a testnet build can place orders.");

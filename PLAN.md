@@ -221,6 +221,19 @@ The account page and the profiles read every perp exchange that an address uses 
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` (both modes) pass; on testnet, `/trader/0x9dbe4eb4a0a41955e1dc733e322f84295a0aa5c0` and `/account` show `USDC · Perps · vntls 67.73` and `HARRR · Spot 244.36 ≈ $195`; mainnet shows the spot rows and queries the 10 builder exchanges; 375 px has no horizontal scroll.
 
+## Phase 4j: wallet connect on mainnet (read-only)
+
+Connect a wallet on either host. On mainnet it only reads your address; on testnet it can also trade.
+
+- [x] `WALLET_ENABLED` in `lib/trading/config.ts`; `WalletProviders` and the lazy wagmi chunk mount in every build; anything that signs or trades stays behind `TRADING_ENABLED`
+- [x] Header: "Connect wallet" in both builds; the mainnet popover shows the address, the blockie, the account value, the read-only note, "My account" and Disconnect, and no Testnet badge
+- [x] `/account`: `WalletAccount` (renamed from `TestnetAccount`) in both builds; mainnet hides the faucet and transfer notes; the disconnected prompt adds "No wallet? Search any address in the header, or track it in the watchlist."
+- [x] The saved "My address" section, its hook and `lib/myAddress.ts` are removed (`slipstream.myAddress` is no longer read)
+- [x] `lib/wallet-guard.test.ts`: the mainnet wallet files never import the exchange module or the trading actions hook
+- [x] README, DECISIONS, CLAUDE.md hard rule and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` (both modes) pass; on mainnet a fake wallet connects, `/account` shows its account, and the provider log has no signature request and the network log no `/exchange` request; the testnet build still connects, approves and trades as before; 375 px has no horizontal scroll.
+
 ## Phase 5a: push alerts
 
 Alerts reach the user when no Slipstream tab is open. A Cloudflare Worker (`workers/push/`) with a D1 store polls the tracked addresses once a minute and sends Web Push messages; the app's service worker shows them. Free tiers only.
