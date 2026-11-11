@@ -13,6 +13,7 @@ import {
   markRead,
   MAX_NOTICES,
   noticeFromFeedItem,
+  noticeTag,
   noticeText,
   parseNotices,
   shouldShowBrowserNotice,
@@ -244,5 +245,16 @@ describe("shouldShowBrowserNotice", () => {
     expect(shouldShowBrowserNotice({ ...base, permission: "denied" })).toBe(false);
     expect(shouldShowBrowserNotice({ ...base, permission: "unsupported" })).toBe(false);
     expect(shouldShowBrowserNotice({ ...base, visibility: "visible" })).toBe(false);
+  });
+});
+
+describe("noticeTag", () => {
+  it("uses the push tag scheme network:user:oid", () => {
+    expect(noticeTag(notice({ id: `${A}:42:420` }), "mainnet")).toBe(`mainnet:${A}:42`);
+    expect(noticeTag(notice({ id: `${A}:42:420` }), "testnet")).toBe(`testnet:${A}:42`);
+  });
+
+  it("falls back to the id when it has no oid", () => {
+    expect(noticeTag(notice({ id: "odd" }), "mainnet")).toBe("mainnet:odd");
   });
 });

@@ -5,7 +5,7 @@
 A read-only "follow the smart money" web app: leaderboard, live trade feed, trader profiles, and a mocked copy-trade sheet. Built as a portfolio piece for Arbital (onchain social trading; React, TypeScript, React Native).
 
 - **Budget:** about 2 days. Hard cutoff after Phase 4. Phase 5 is a bonus.
-- **Rule:** production is read-only. Trading exists only on Hyperliquid testnet behind `NEXT_PUBLIC_TRADING_MODE=testnet`. Never create a mainnet exchange client. Never ask for or store a user's wallet key; only a generated agent key may be stored, in localStorage, for testnet. No database.
+- **Rule:** production is read-only. Trading exists only on Hyperliquid testnet behind `NEXT_PUBLIC_TRADING_MODE=testnet`. Never create a mainnet exchange client. Never ask for or store a user's wallet key; only a generated agent key may be stored, in localStorage, for testnet. The only server-side state is the push subscription store in Cloudflare D1 (push endpoint, network, watched addresses, threshold, optional labels). No accounts and no other user data.
 
 ## Stack
 
@@ -139,7 +139,7 @@ The user relaxed the read-only rule for testnet only (2026-11-11, see DECISIONS.
 
 ## Phase 4c: watchlist and alerts
 
-No server push: the app has no database. Alerts fire only while a Slipstream tab is open (see DECISIONS.md).
+In-tab alerts fire while a Slipstream tab is open. Phase 5a adds Web Push for the time without a tab (see DECISIONS.md).
 
 - [x] `lib/alerts.ts` and `lib/notifications.ts`: settings, notices, `shouldNotify`, `noticeText`, `collapseBurst` (tested)
 - [x] Stores for alert settings and notices in localStorage (zod, try/catch, 50 notices); the `slipstream.watchlist` format stays
@@ -195,6 +195,21 @@ No server push: the app has no database. Alerts fire only while a Slipstream tab
 - [x] README, DECISIONS and this checklist updated
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass, `pnpm build` passes with no variable, `NEXT_PUBLIC_TRADING_MODE=testnet` and `NEXT_PUBLIC_NETWORK=testnet`, and the headless browser checks show only mainnet hosts without a variable and only testnet hosts (plus icons) with the testnet flag.
+
+## Phase 5a: push alerts
+
+Alerts reach the user when no Slipstream tab is open. A Cloudflare Worker (`workers/push/`) with a D1 store polls the tracked addresses once a minute and sends Web Push messages; the app's service worker shows them. Free tiers only.
+
+- [x] Worker package `slipstream-push-worker`: HTTP API (`/health`, `/vapid-public-key`, `POST`/`DELETE /subscriptions`, `/subscriptions/test`, `/tick`), zod at every boundary, CORS allowlist, 64 KB body limit
+- [x] D1 schema (subscriptions, watches, cursors, deliveries); deliveries pruned after 2 days
+- [x] Watcher on a one-minute cron: `userFillsByTime` cursor that starts 2 minutes back (never notifies history), boundary de-dupe by tid, grouping by `oid`, threshold, system-fill filter, request budget for Workers Free, failure pruning (404/410 at once, other errors at 10)
+- [x] Pure watcher logic with Vitest tests; root `pnpm lint`, `pnpm typecheck` and `pnpm test` cover the Worker
+- [x] Deployed with the D1 database, the migration and four secrets
+- [x] App: `public/sw.js`, manifest and icons, `lib/push.ts` (tested), `usePushAlerts`, `PushSync`, "Push alerts" switch with "Send test"
+- [x] In-tab and push notifications share the tag `network:user:oid`
+- [x] README, DECISIONS and this checklist updated
+
+**Done when:** Worker tests and curl checks (including two `/tick` runs against a fake subscription) pass, `pnpm lint && pnpm typecheck && pnpm test` pass, `pnpm build` passes in both modes, and the headless browser checks (manifest, icons, service worker, switch states, 375 px) pass.
 
 ## Phase 5 (bonus): Expo app (4–6 h)
 

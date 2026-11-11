@@ -3,12 +3,14 @@
 import { useSyncExternalStore } from "react";
 
 import type { BrowserPermission, Notice } from "@/lib/notifications";
-import { noticeText } from "@/lib/notifications";
+import { NETWORK } from "@/lib/network";
+import { noticeTag, noticeText } from "@/lib/notifications";
 
 /*
  * Browser notifications through the Notification API. They fire only while
- * a Slipstream tab is open: the app has no server push (no database to keep
- * push subscriptions). Every call is in try/catch and never throws.
+ * a Slipstream tab is open. Push alerts (hooks/usePushAlerts.ts) cover the
+ * time without a tab and use the same tag, so the system merges a duplicate.
+ * Every call is in try/catch and never throws.
  */
 
 const listeners = new Set<() => void>();
@@ -65,7 +67,11 @@ export function showBrowserNotice(
   if (readPermission() !== "granted") return;
   try {
     const { title, body } = noticeText(notice, label);
-    const notification = new window.Notification(title, { body, tag: notice.id });
+    const notification = new window.Notification(title, {
+      body,
+      tag: noticeTag(notice, NETWORK),
+      icon: "/icons/icon-192.png",
+    });
     notification.onclick = () => {
       try {
         window.focus();
@@ -90,6 +96,9 @@ export function useBrowserNotifications() {
     show: showBrowserNotice,
   };
 }
+
+/** Tell the settings UI to read the permission again (after another prompt). */
+export const refreshBrowserPermission = notify;
 
 /** The current permission, read outside React. */
 export const browserPermission = readPermission;

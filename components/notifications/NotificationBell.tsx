@@ -111,7 +111,9 @@ export function NotificationBell() {
                 Follow a trader to get alerts
               </Link>
             ) : (
-              <p className="text-2xs text-faint">Alerts fire while Slipstream is open.</p>
+              <p className="text-2xs text-faint">
+                Alerts fire while Slipstream is open. Push alerts also work when it is closed.
+              </p>
             )}
           </div>
         ) : (

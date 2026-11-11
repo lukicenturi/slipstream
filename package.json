@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run",
+    "typecheck": "next typegen && tsc --noEmit && pnpm --filter slipstream-push-worker typecheck",
+    "test": "vitest run && pnpm --filter slipstream-push-worker test",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

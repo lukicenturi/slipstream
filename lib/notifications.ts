@@ -4,6 +4,7 @@ import type { FeedItem } from "@/lib/calc/aggregateFills";
 import { describeFillAction } from "@/lib/calc/fillAction";
 import { formatPrice, formatRelativeTime, formatSize, formatUsd } from "@/lib/format";
 import { normalizeAddress } from "@/lib/address";
+import type { Network } from "@/lib/network";
 
 /*
  * Notices: one per live order of a watched trader. The list is JSON in
@@ -155,6 +156,17 @@ export function noticeText(
       formatRelativeTime(notice.time, Math.max(now, notice.time)),
     ].join(" · "),
   };
+}
+
+/**
+ * The tag of a system notification for a notice: `network:user:oid`. A push
+ * from the Worker uses the same tag, so when a tab is open and a push also
+ * arrives, the system shows one notification.
+ */
+export function noticeTag(notice: Pick<Notice, "id" | "address">, network: Network): string {
+  // The notice id is `user:oid:firstTid` (the feed item id).
+  const oid = notice.id.split(":")[1];
+  return oid ? `${network}:${notice.address}:${oid}` : `${network}:${notice.id}`;
 }
 
 /** The badge text for an unread count: nothing for 0, "9+" above 9. */

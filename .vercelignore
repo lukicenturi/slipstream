@@ -2,3 +2,5 @@
 screenshots/
 docs/
 *.tsbuildinfo
+workers/
+.secrets/

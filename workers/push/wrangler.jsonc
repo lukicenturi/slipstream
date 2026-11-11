@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "slipstream-push",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-11",
+  // The watcher runs once a minute (the shortest cron interval).
+  "triggers": { "crons": ["* * * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "slipstream-push",
+      "database_id": "f8e23643-3efe-4d85-8f85-8181d01ed6c8",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "observability": { "enabled": true },
+  "vars": {
+    "ALLOWED_ORIGINS": "https://slipstream-hl.vercel.app,https://slipstream-alpha.vercel.app,https://slipstream-testnet.vercel.app,http://localhost:3000,http://localhost:3100",
+    "MAX_ADDRESSES_PER_SUBSCRIPTION": "50",
+    "MAX_ADDRESSES_PER_TICK": "300",
+    // Workers Free: 50 subrequests per invocation, D1 calls included (a tick makes 3).
+    "MAX_SUBREQUESTS_PER_TICK": "45",
+  },
+  // Secrets (wrangler secret put): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, ADMIN_TOKEN.
+}

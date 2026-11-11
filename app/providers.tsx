@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 
 import { CopyTradeProvider } from "@/components/copy-trade/CopyTradeProvider";
 import { MidsFeeder } from "@/components/providers/MidsFeeder";
+import { PushSync } from "@/components/providers/PushSync";
 import { WatchlistTracker } from "@/components/providers/WatchlistTracker";
 import { TradingProviders } from "@/components/trading/TradingProviders";
 import { Toaster } from "@/components/ui/sonner";
@@ -29,6 +30,8 @@ export function Providers({ children }: { children: ReactNode }) {
           <CopyTradeProvider>
             {/* Live alerts for followed traders, on every page. */}
             <WatchlistTracker />
+            {/* Sends the watchlist to the push Worker when push alerts are on. */}
+            <PushSync />
             {children}
           </CopyTradeProvider>
           {/* Toasts sit above the mobile bottom bar (the variable is 0 from lg up). */}

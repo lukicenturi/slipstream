@@ -74,7 +74,8 @@ export function WatchlistView() {
           <div className="min-w-0">
             <h1 className="text-lg font-semibold text-foreground">Watchlist</h1>
             <p className="text-xs text-muted-foreground">
-              Traders you follow. Alerts fire while Slipstream is open.
+              Traders you follow. Alerts fire while Slipstream is open, or as push alerts when they
+              are on.
             </p>
           </div>
           <AddTraderForm className="w-full md:max-w-sm" />

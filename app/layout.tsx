@@ -22,6 +22,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Slipstream",
   description: "A read-only live feed of Hyperliquid perps traders.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  // On iPhone, push alerts work only for the app on the Home Screen.
+  appleWebApp: { capable: true, title: "Slipstream", statusBarStyle: "black" },
 };
 
 // viewport-fit=cover makes env(safe-area-inset-bottom) work on iPhones,
@@ -30,6 +40,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#0a0b0d",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
