@@ -12,9 +12,9 @@ import { shortAddress } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
- * "My address": the user saves a mainnet address or name once (in this
- * browser only), and the section shows that mainnet profile. It works in
- * both builds. The value lives in localStorage, so the server render and
+ * "My address": the user saves an address or name once (in this browser
+ * only), and the section shows that profile on the network of this build.
+ * It works in both builds. The value lives in localStorage, so the server render and
  * the first client render show a skeleton.
  */
 export function MyAddressSection({ title }: { title: string }) {
@@ -42,10 +42,10 @@ export function MyAddressSection({ title }: { title: string }) {
         className="flex flex-col gap-2 rounded-lg border px-3 py-3"
         data-testid="my-address-form"
       >
-        <p className="text-xs text-foreground">Your mainnet address or name</p>
+        <p className="text-xs text-foreground">Your address or name</p>
         <AddressNameForm
           onResolved={onResolved}
-          inputLabel="Your mainnet address or name"
+          inputLabel="Your address or name"
           submitLabel="Save"
           className="w-full max-w-md"
           submitTestId="my-address-save"

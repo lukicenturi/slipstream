@@ -37,4 +37,22 @@ describe("exchange guard", () => {
     expect(String(transport.apiUrl)).toBe("https://api.hyperliquid-testnet.xyz");
     expect(exchange.createAgentClient(KEY).testnet).toBe(true);
   });
+
+  it("uses only the testnet API when NEXT_PUBLIC_NETWORK selects testnet", async () => {
+    vi.stubEnv("NEXT_PUBLIC_TRADING_MODE", "");
+    vi.stubEnv("NEXT_PUBLIC_NETWORK", "testnet");
+    vi.resetModules();
+    const exchange = await import("./exchange");
+    const transport = exchange.createTestnetTransport();
+    expect(transport.isTestnet).toBe(true);
+    expect(String(transport.apiUrl)).toBe("https://api.hyperliquid-testnet.xyz");
+  });
+
+  it("refuses NEXT_PUBLIC_NETWORK=mainnet", async () => {
+    vi.stubEnv("NEXT_PUBLIC_TRADING_MODE", "");
+    vi.stubEnv("NEXT_PUBLIC_NETWORK", "mainnet");
+    vi.resetModules();
+    const exchange = await import("./exchange");
+    expect(() => exchange.createTestnetTransport()).toThrow(/Trading is disabled/);
+  });
 });

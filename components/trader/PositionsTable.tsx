@@ -11,9 +11,9 @@ import type { QueryStatus } from "./TraderHeader";
 
 /**
  * Open positions, largest first. The table scrolls sideways on narrow
- * screens; the Asset column stays in place. The mark price comes from the
- * nearest MidsSourceProvider (mainnet by default). The account page passes
- * its own title, id, mark label and empty texts, and hides the Copy buttons.
+ * screens; the Asset column stays in place. The mark price is the live mid
+ * from the shared socket. The account page passes its own title, id and
+ * empty texts, and hides the Copy buttons.
  */
 export function PositionsTable({
   positions,
@@ -22,7 +22,6 @@ export function PositionsTable({
   className,
   title = "Positions",
   titleId = "positions-title",
-  markLabel = "Mark",
   showCopy = true,
   emptyTitle = "No open positions",
   emptyDescription = "This trader holds no perps now.",
@@ -33,7 +32,6 @@ export function PositionsTable({
   className?: string;
   title?: string;
   titleId?: string;
-  markLabel?: string;
   showCopy?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -43,7 +41,7 @@ export function PositionsTable({
     "Size",
     "Leverage",
     "Entry",
-    markLabel,
+    "Mark",
     "Unrealized PnL (ROE)",
     "Liq. price",
   ];

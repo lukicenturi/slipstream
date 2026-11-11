@@ -12,14 +12,11 @@ import { useProfileDisplayName } from "@/hooks/useNames";
 import type { WinRate } from "@/lib/calc/winRate";
 import { EMPTY_VALUE, formatPercent, formatUsd, shortAddress } from "@/lib/format";
 import type { ClearinghouseState } from "@/lib/hyperliquid/schemas";
+import { explorerAddressUrl, HL, NETWORK } from "@/lib/network";
 
 import { FollowButton } from "./FollowButton";
 
 export type QueryStatus = "pending" | "error" | "success";
-
-export function explorerUrl(address: string): string {
-  return `https://app.hyperliquid.xyz/explorer/address/${address}`;
-}
 
 export async function copyAddress(address: string): Promise<void> {
   try {
@@ -30,7 +27,7 @@ export async function copyAddress(address: string): Promise<void> {
   }
 }
 
-/** Copy the address, or open it in the Hyperliquid explorer. */
+/** Copy the address, or open it in the explorer of this build's network. */
 function AddressActions({ address }: { address: string }) {
   return (
     <>
@@ -45,10 +42,12 @@ function AddressActions({ address }: { address: string }) {
       </Button>
       <Button asChild variant="ghost" size="icon-xs">
         <a
-          href={explorerUrl(address)}
+          href={explorerAddressUrl(address)}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Open in the Hyperliquid explorer"
+          aria-label={`Open in the ${HL.explorerLabel}`}
+          title={HL.explorerLabel}
+          data-testid="explorer-link"
         >
           <ExternalLinkIcon aria-hidden="true" />
         </a>
@@ -128,7 +127,11 @@ export function TraderHeader({
       {noActivity ? (
         <div className="rounded-lg border">
           <EmptyState
-            title="No activity for this address on Hyperliquid."
+            title={
+              NETWORK === "testnet"
+                ? "No activity for this address on Hyperliquid testnet."
+                : "No activity for this address on Hyperliquid."
+            }
             description="It holds no funds, no open positions and no trades."
           />
         </div>

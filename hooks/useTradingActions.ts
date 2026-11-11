@@ -8,11 +8,11 @@ import { getConnection, getWalletClient, switchChain } from "wagmi/actions";
 import { arbitrumSepolia } from "wagmi/chains";
 
 import { forgetAgent, storeAgent } from "@/hooks/useAgent";
-import { testnetAccountKey } from "@/hooks/useTestnetAccount";
+import { traderFillsKey, traderStateKey } from "@/hooks/useTrader";
 import { getAllMidsOnce } from "@/lib/hyperliquid/client";
 import type { PerpAsset, Position, PositionSide } from "@/lib/hyperliquid/schemas";
+import { HL } from "@/lib/network";
 import { createAgent, type StoredAgent } from "@/lib/trading/agent";
-import { TESTNET } from "@/lib/trading/config";
 import { TradingError, toTradingError } from "@/lib/trading/errors";
 import {
   approveAgent,
@@ -99,7 +99,9 @@ export function usePlaceTestnetOrder(owner: string | undefined, agent: StoredAge
           });
         }
         setPhase("order");
-        const mids = await getAllMidsOnce(TESTNET.infoUrl);
+        // A fresh REST read right before the order. The trading code runs
+        // only in the testnet build, so HL is testnet here.
+        const mids = await getAllMidsOnce(HL.infoUrl);
         const mid = mids[asset.name];
         if (mid === undefined) throw new TradingError("api", `No testnet price for ${asset.name}.`);
         const order = buildIocOrder({
@@ -120,7 +122,8 @@ export function usePlaceTestnetOrder(owner: string | undefined, agent: StoredAge
     },
     onSettled: () => {
       setPhase(null);
-      void queryClient.invalidateQueries({ queryKey: testnetAccountKey(owner) });
+      void queryClient.invalidateQueries({ queryKey: traderStateKey(owner) });
+      void queryClient.invalidateQueries({ queryKey: traderFillsKey(owner) });
     },
   });
 

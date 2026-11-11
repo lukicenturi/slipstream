@@ -16,8 +16,8 @@ import type { CopyTradePrefill } from "@/components/copy-trade/CopyTradeProvider
 import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { forgetAgent } from "@/hooks/useAgent";
+import { useMid } from "@/hooks/useMid";
 import { useTestnetMeta } from "@/hooks/useTestnetMeta";
-import { useTestnetMid } from "@/hooks/useTestnetMids";
 import { useApproveAgent, usePlaceTestnetOrder, type OrderPhase } from "@/hooks/useTradingActions";
 import { useTradingSession } from "@/hooks/useTradingSession";
 import { displaySymbol } from "@/lib/assets";
@@ -29,7 +29,8 @@ import {
 } from "@/lib/calc/copyTrade";
 import { EMPTY_VALUE, formatPrice, formatSize, formatUsd } from "@/lib/format";
 import type { PositionSide } from "@/lib/hyperliquid/schemas";
-import { TESTNET, testnetExplorerUrl } from "@/lib/trading/config";
+import { explorerAddressUrl } from "@/lib/network";
+import { TESTNET } from "@/lib/trading/config";
 import type { TradingError } from "@/lib/trading/errors";
 import { clampLeverage, findAsset, orderBlockReason, type OrderResult } from "@/lib/trading/order";
 
@@ -49,6 +50,7 @@ const LINK = "rounded-sm text-brand underline underline-offset-2 hover:text-fore
 /**
  * The copy-trade form of the testnet build. Same fields as the demo; the
  * prices, the leverage limit and the balance come from Hyperliquid testnet.
+ * The mid is the live mid of the shared socket, which is on testnet in this build.
  * One primary button moves through the steps: connect, approve, order.
  */
 export default function TestnetCopyTradeForm({
@@ -62,7 +64,7 @@ export default function TestnetCopyTradeForm({
   const id = useId();
   const session = useTradingSession({ live: open });
   const meta = useTestnetMeta(open);
-  const midQuery = useTestnetMid(coin, open);
+  const mid = useMid(coin);
   const approve = useApproveAgent(session.address);
   const place = usePlaceTestnetOrder(session.address, session.agent);
 
@@ -76,14 +78,12 @@ export default function TestnetCopyTradeForm({
   const leverage = clampLeverage(wantedLeverage, maxLeverage);
   const [result, setResult] = useState<OrderResult | null>(null);
 
-  const mid = midQuery.data;
   const position = session.account.data?.positions.find((entry) => entry.coin === coin);
   const step = session.status === "disconnected" ? 1 : session.status === "connected" ? 2 : 3;
 
   let blockReason: string | null;
   if (meta.isPending) blockReason = "Loading testnet markets.";
   else if (meta.isError) blockReason = "Testnet markets did not load.";
-  else if (midQuery.isError && mid === undefined) blockReason = "The testnet price did not load.";
   else if (session.account.isError) blockReason = "The testnet balance did not load.";
   else
     blockReason = orderBlockReason({
@@ -95,10 +95,9 @@ export default function TestnetCopyTradeForm({
     });
 
   const retry =
-    meta.isError || midQuery.isError || session.account.isError
+    meta.isError || session.account.isError
       ? () => {
           void meta.refetch();
-          void midQuery.refetch();
           void session.account.refetch();
         }
       : undefined;
@@ -362,7 +361,7 @@ function ResultNotice({
       </span>
       {address ? (
         <a
-          href={testnetExplorerUrl(address)}
+          href={explorerAddressUrl(address)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 font-sans text-muted-foreground underline underline-offset-2 hover:text-foreground"

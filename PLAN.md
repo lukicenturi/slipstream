@@ -185,6 +185,17 @@ No server push: the app has no database. Alerts fire only while a Slipstream tab
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` (flag unset and `testnet`) pass, and the headless browser checks at 1280 px and 375 px (live table, kept feed items, account page, saved address, testnet account with a fake wallet, no exchange request) pass in both modes.
 
+## Phase 4g: one network per host
+
+- [x] `lib/network.ts`: `NETWORK` from `NEXT_PUBLIC_NETWORK` or `NEXT_PUBLIC_TRADING_MODE`, `ENDPOINTS`, `HL`, `explorerAddressUrl` (tested); `TRADING_ENABLED` is `NETWORK === "testnet"`
+- [x] The info URL, the socket URL, the leaderboard file (cache key with the network) and every explorer link read `HL`
+- [x] Testnet-only REST hooks and the mids context removed; the account page, the sheet and the wallet popover share the profile queries and the shared socket
+- [x] "Mark" everywhere, "Open on Mainnet", "My address" in both builds, Testnet in the subtitles and the home `h1`
+- [x] Regression tests: exported URLs equal `HL` in 4 environments; no endpoint literal outside `lib/network.ts` and the exchange host pin
+- [x] README, DECISIONS and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass, `pnpm build` passes with no variable, `NEXT_PUBLIC_TRADING_MODE=testnet` and `NEXT_PUBLIC_NETWORK=testnet`, and the headless browser checks show only mainnet hosts without a variable and only testnet hosts (plus icons) with the testnet flag.
+
 ## Phase 5 (bonus): Expo app (4–6 h)
 
 Only if Phases 1–4 are solid.

@@ -1,8 +1,13 @@
+import { ENDPOINTS, NETWORK, type Network } from "@/lib/network";
+
 /*
  * Trading mode. Production is read-only. Orders exist only on the
- * Hyperliquid testnet, and only in a build with
- * NEXT_PUBLIC_TRADING_MODE=testnet. There is no mainnet mode.
+ * Hyperliquid testnet, and only in the testnet build. A build has one
+ * network (lib/network.ts): trading is on exactly when that network is
+ * testnet. There is no mainnet mode.
  */
+
+export { NETWORK, type Network };
 
 export type TradingMode = "off" | "testnet";
 
@@ -11,16 +16,17 @@ export function parseTradingMode(value: string | undefined): TradingMode {
   return value === "testnet" ? "testnet" : "off";
 }
 
-// Next inlines NEXT_PUBLIC_ variables only for this literal expression, at build time.
-const BUILD_TRADING_MODE: TradingMode = parseTradingMode(process.env.NEXT_PUBLIC_TRADING_MODE);
+// NETWORK reads NEXT_PUBLIC_NETWORK and NEXT_PUBLIC_TRADING_MODE as literal
+// process.env expressions, so Next inlines them at build time.
+const BUILD_TRADING_MODE: TradingMode = NETWORK === "testnet" ? "testnet" : "off";
 
-/** The trading mode of this build. */
+/** The trading mode of this build: "testnet" in the testnet build, else "off". */
 export function getTradingMode(): TradingMode {
   return BUILD_TRADING_MODE;
 }
 
-/** True only in a testnet build. Components use it to pick the demo or the testnet UI. */
-export const TRADING_ENABLED: boolean = BUILD_TRADING_MODE === "testnet";
+/** True only in the testnet build. Components use it to pick the demo or the testnet UI. */
+export const TRADING_ENABLED: boolean = NETWORK === "testnet";
 
 export class TradingDisabledError extends Error {
   constructor() {
@@ -34,17 +40,8 @@ export function assertTestnetTrading(mode: unknown): asserts mode is "testnet" {
   if (mode !== "testnet") throw new TradingDisabledError();
 }
 
-export const TESTNET = {
-  infoUrl: "https://api.hyperliquid-testnet.xyz/info",
-  appUrl: "https://app.hyperliquid-testnet.xyz",
-  faucetUrl: "https://app.hyperliquid-testnet.xyz/drip",
-  explorerUrl: "https://app.hyperliquid-testnet.xyz/explorer",
-} as const;
-
-/** The testnet explorer page of an account. */
-export function testnetExplorerUrl(address: string): string {
-  return `${TESTNET.explorerUrl}/address/${address.toLowerCase()}`;
-}
+/** The testnet endpoints, for the trading code. */
+export const TESTNET = ENDPOINTS.testnet;
 
 /*
  * Networks and hosts. Each network has its own deployment (host). The
@@ -52,8 +49,6 @@ export function testnetExplorerUrl(address: string): string {
  * The app never switches network at run time: the network switch is a
  * link to the other host.
  */
-
-export type Network = "mainnet" | "testnet";
 
 export type NetworkUrls = Readonly<Record<Network, string>>;
 
@@ -77,9 +72,6 @@ export function parseNetworkUrl(value: string | undefined, fallback: string): st
     return fallback;
   }
 }
-
-/** The network of this build: testnet when trading is on, else mainnet. */
-export const NETWORK: Network = TRADING_ENABLED ? "testnet" : "mainnet";
 
 // Literal process.env expressions, so Next inlines them at build time.
 export const NETWORK_URLS: NetworkUrls = {

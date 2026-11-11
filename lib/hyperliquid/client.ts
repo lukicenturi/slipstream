@@ -1,5 +1,7 @@
 import type { z } from "zod";
 
+import { HL } from "@/lib/network";
+
 import {
   allMidsSchema,
   clearinghouseStateSchema,
@@ -17,11 +19,11 @@ import {
 /*
  * REST client. Every response goes through a zod schema here, so the
  * rest of the app only sees parsed domain types with real numbers.
- * This file calls the public info endpoint only (mainnet by default, or
- * the testnet info URL for the testnet trading build). It never signs.
+ * This file calls the public info endpoint of this build's network only
+ * (lib/network.ts). It never signs.
  */
 
-export const INFO_URL = "https://api.hyperliquid.xyz/info";
+export const INFO_URL = HL.infoUrl;
 const REQUEST_TIMEOUT_MS = 10_000;
 // A cold /api/leaderboard downloads the 39 MB file first, so it gets more time.
 const LEADERBOARD_TIMEOUT_MS = 60_000;
@@ -57,7 +59,7 @@ interface RequestOptions {
 }
 
 interface InfoOptions extends RequestOptions {
-  /** The info endpoint. The default is mainnet; the testnet build passes TESTNET.infoUrl. */
+  /** The info endpoint. The default is the info URL of this build's network. */
   baseUrl?: string;
 }
 
@@ -150,7 +152,7 @@ export function getMeta(baseUrl: string, options: RequestOptions = {}): Promise<
   return infoRequest({ type: "meta" }, metaSchema, { ...options, baseUrl });
 }
 
-/** One REST snapshot of all perp mids. Live mainnet mids come from the socket instead. */
+/** One REST snapshot of all perp mids. Live mids come from the shared socket instead. */
 export function getAllMidsOnce(
   baseUrl: string,
   options: RequestOptions = {},

@@ -7,8 +7,9 @@ import { MyAddressSection } from "./MyAddressSection";
 
 /**
  * The account page. Testnet build: the connected wallet's testnet account,
- * then the saved mainnet profile. Read-only build: the saved mainnet
- * profile only. The page only reads; it sends no exchange request.
+ * then the saved address. Read-only build: the saved address only. Both
+ * read the network of the build. The page only reads; it sends no
+ * exchange request.
  */
 export function AccountView() {
   return (
@@ -17,12 +18,12 @@ export function AccountView() {
         <h1 className="text-lg font-semibold text-foreground">My account</h1>
         <p className="text-xs text-muted-foreground">
           {TRADING_ENABLED
-            ? "Your testnet wallet and your saved mainnet address."
-            : "Your saved mainnet address and its profile."}
+            ? "Your testnet wallet and your saved address, with testnet data."
+            : "Your saved address and its profile."}
         </p>
       </div>
       {TRADING_ENABLED ? <LazyTestnetAccount /> : null}
-      <MyAddressSection title={TRADING_ENABLED ? "Mainnet profile" : "My address"} />
+      <MyAddressSection title="My address" />
     </div>
   );
 }

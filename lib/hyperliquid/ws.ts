@@ -1,3 +1,5 @@
+import { HL } from "@/lib/network";
+
 import { parseWsMessage, type AllMidsMessage, type UserFillsMessage } from "./schemas";
 
 /*
@@ -10,10 +12,11 @@ import { parseWsMessage, type AllMidsMessage, type UserFillsMessage } from "./sc
  * - The server sends a userFills snapshot only once per subscription. The
  *   socket keeps it (plus later live fills) and replays it to a handler that
  *   joins an existing subscription, so every subscriber sees the history.
+ * - The URL is the socket of this build's network (lib/network.ts).
  * Components never use this class directly. They use the hooks in hooks/.
  */
 
-export const WS_URL = "wss://api.hyperliquid.xyz/ws";
+export const WS_URL = HL.wsUrl;
 
 export type Subscription = { type: "allMids" } | { type: "userFills"; user: string };
 

@@ -30,7 +30,7 @@ function forget(): void {
   myAddressStore.update(clearMyAddress);
 }
 
-/** The saved mainnet address (or null) and helpers to change it. */
+/** The saved address (or null) and helpers to change it. */
 export function useMyAddress() {
   const myAddress = useSyncExternalStore(
     myAddressStore.subscribe,

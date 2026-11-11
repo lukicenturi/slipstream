@@ -3,20 +3,28 @@
 import { useConnection } from "wagmi";
 
 import { useAgent } from "@/hooks/useAgent";
-import { useTestnetAccount } from "@/hooks/useTestnetAccount";
+import { useTraderState } from "@/hooks/useTrader";
+
+/** The account refreshes this often while the sheet is open. */
+export const ACCOUNT_REFRESH_MS = 10_000;
 
 export type TradingStatus = "disconnected" | "connected" | "agent-ready";
 
 /**
  * The state of testnet trading: the connected wallet, the stored agent and
- * the testnet account. Use it only inside the testnet build (it needs wagmi).
- * `live` refreshes the account every 10 s (while the sheet is open).
+ * the account. Use it only inside the testnet build (it needs wagmi), where
+ * the network is testnet. The account is the profile's clearinghouse query,
+ * so the sheet, the wallet popover and the account page share it.
+ * `live` loads the account and refreshes it every 10 s (while the sheet is open).
  */
 export function useTradingSession({ live }: { live: boolean }) {
   const connection = useConnection();
   const address = connection.address?.toLowerCase();
   const agent = useAgent(address);
-  const account = useTestnetAccount(address, live);
+  const account = useTraderState(address, {
+    enabled: live,
+    refetchInterval: live ? ACCOUNT_REFRESH_MS : false,
+  });
 
   const status: TradingStatus = !address ? "disconnected" : agent ? "agent-ready" : "connected";
   return {

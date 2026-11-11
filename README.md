@@ -2,7 +2,11 @@
 
 Slipstream is a social feed for Hyperliquid perps traders. It shows the top 100 traders by 30-day PnL, a live feed of their orders, and a profile page for any address with open positions, a PnL chart and recent fills. The prices and the PnL update live from one shared WebSocket. A copy-trade sheet shows the margin and the liquidation price that a copy would need.
 
-The mainnet deployment is read-only: the sheet is a demo, and there is no wallet connection, no signing and no database. A second deployment, built with `NEXT_PUBLIC_TRADING_MODE=testnet`, turns the same sheet into a real order ticket for **Hyperliquid testnet** (see [Testnet trading](#testnet-trading)). No build can trade on mainnet.
+The mainnet deployment is read-only: the sheet is a demo, and there is no wallet connection, no signing and no database. A second deployment, built with `NEXT_PUBLIC_NETWORK=testnet`, reads Hyperliquid testnet data and turns the same sheet into a real order ticket for **Hyperliquid testnet** (see [One network per deployment](#one-network-per-deployment) and [Testnet trading](#testnet-trading)). No build can trade on mainnet.
+
+### One network per deployment
+
+Each build has exactly one network. The mainnet host reads mainnet data and is read-only. The testnet host reads testnet data everywhere: the leaderboard, the live feed, trader profiles, prices and explorer links. It can also place testnet orders. `NEXT_PUBLIC_NETWORK=testnet` selects testnet at build time. `NEXT_PUBLIC_TRADING_MODE=testnet` still selects testnet too. Without either variable, the build is mainnet. All Hyperliquid endpoints come from `lib/network.ts`, and a test fails when an endpoint appears anywhere else in the app source.
 
 **Live:**
 
@@ -31,10 +35,10 @@ The previous address, https://slipstream-alpha.vercel.app, still works. A link i
 - **Names instead of addresses.** The leaderboard, the live feed, the watching chips and the profile header show a name when one exists. The order is: the Hyperliquid display name, then the `.hl` primary name, then the ENS primary name, then the short address.
 - **Trader profile.** Go to `/trader/<address>`. It shows account value, live unrealized PnL, win rate, open positions with a live mark price, a PnL chart and the last 50 orders.
 - **Tracking and alerts.** Star a trader on a leaderboard row or a feed row, or press "Follow" on the profile. `/watchlist` lists every tracked trader with account value, live unrealized PnL, open positions, the last trade, an alert switch and a remove button. Its form accepts an address, a `.eth` name or a `.hl` name. While a Slipstream tab is open, each new live order of a tracked trader becomes a notice: a toast, a row in the header bell, and (when you allow it) a browser notification. See [Tracking and alerts](#tracking-and-alerts).
-- **Account page.** `/account` has a "My address" section: save a mainnet address, a `.eth` name or a `.hl` name once, and the page shows that trader profile. "Change" and "Forget" edit it. The value stays in this browser (`slipstream.myAddress`). In the testnet build, the page first shows the connected wallet's testnet account: account value, USDC available, margin used, live unrealized PnL at testnet prices, testnet positions and fills, the testnet explorer link, a link to the same address on the mainnet host, and a faucet link when the wallet has no testnet funds. The page only reads; it sends no exchange request.
+- **Account page.** `/account` has a "My address" section: save an address, a `.eth` name or a `.hl` name once, and the page shows that trader profile on the network of the build. "Change" and "Forget" edit it. The value stays in this browser (`slipstream.myAddress`). In the testnet build, the page first shows the connected wallet's testnet account: account value, USDC available, margin used, live unrealized PnL, positions and fills, the testnet explorer link, an "Open on Mainnet" link to the same address on the mainnet host, and a faucet link when the wallet has no testnet funds. It uses the same queries and the same socket as `/trader/<address>`, so both pages show the same numbers. The page only reads; it sends no exchange request.
 - **Copy-trade sheet (demo).** Each position row and each perp feed row has a "Copy" button. The sheet shows side, size, leverage, the estimated margin and the estimated liquidation price. The confirm button says "Demo, no order is placed". It shows a toast and does nothing else.
 - **Testnet copy trade (testnet build only).** Connect a browser wallet, approve a Slipstream agent once, then place a market-like IOC order on Hyperliquid testnet from the same sheet. The wallet popover in the header shows "USDC available", "Account value" and a "My account" link.
-- **Network switch.** A small pill in the header shows the network of this deployment (`MAINNET` in grey or `TESTNET` in amber) and links to the other deployment. It keeps the current page when the other deployment has it. The footer has the same link.
+- **Network switch.** A small pill in the header shows the network of this deployment (`MAINNET` in grey or `TESTNET` in amber) and links to the other deployment. It keeps the current page when the other deployment has it. The footer has the same link. In the testnet build, the leaderboard and feed subtitles also say "Testnet".
 - **Navigation.** Desktop nav links (Leaderboard, Live, Watchlist, Account) in the header and a mobile bottom tab bar with the same four destinations. `Live` is active on `/?view=live` at every width.
 - **Asset icons.** Coin names in the feed, the positions table, the fills list and the sheet have a 16 px icon (24 px in the sheet). Icons come from `app.hyperliquid.xyz/coins/<COIN>.svg`. A coin without an icon (other perp DEXs such as `xyz:NVDA`, spot ids such as `@107`, or a failed image) shows a 2-letter monogram in the same box, so rows keep their height.
 
@@ -56,12 +60,12 @@ flowchart LR
     Names["/api/names<br/>addresses to names"]
   end
 
-  Stats[(stats-data.hyperliquid.xyz<br/>leaderboard, about 39 MB)]
+  Stats[(stats-data.hyperliquid.xyz<br/>Mainnet or Testnet leaderboard file)]
   HLN[(api.hlnames.xyz<br/>.hl names)]
   RPC[(Ethereum RPC<br/>ENS through viem)]
-  Info[(api.hyperliquid.xyz/info)]
-  Socket[(wss://api.hyperliquid.xyz/ws)]
-  Testnet[(api.hyperliquid-testnet.xyz<br/>info + exchange<br/>testnet build only)]
+  Info[(info endpoint<br/>of the build's network)]
+  Socket[(WebSocket<br/>of the build's network)]
+  Exchange[(api.hyperliquid-testnet.xyz/exchange<br/>testnet build only)]
   Wallet[Browser wallet<br/>one approveAgent signature]
 
   Q -->|GET| Route
@@ -80,12 +84,13 @@ flowchart LR
   Feed --> UI
   Q --> UI
   UI -.->|testnet build| Wallet
-  UI -.->|REST info, agent-signed orders| Testnet
+  UI -.->|agent-signed orders| Exchange
 ```
 
+- `lib/network.ts` holds the network of the build (`NETWORK`), the endpoint table of both networks (`ENDPOINTS`) and the endpoints of this build (`HL`). The REST client, the socket, the leaderboard download and every explorer link read `HL`. `lib/network-guard.test.ts` fails when an endpoint URL appears in `app/`, `components/`, `hooks/` or `lib/` outside `lib/network.ts` and the exchange host pin.
 - `lib/hyperliquid/schemas.ts` holds the zod schemas. They come from real responses in `fixtures/`. Every response goes through them. Numbers arrive as strings and become numbers in the schema layer, so components only see parsed types.
 - `lib/hyperliquid/ws.ts` is the only place that opens a socket. It counts references per subscription, reconnects with exponential backoff and jitter, subscribes again after a reconnect, and sends a ping every 50 s.
-- `lib/hyperliquid/mids.ts` keeps the mid prices. A listener subscribes to one coin, so a BTC tick re-renders only BTC rows. `MidsSourceProvider` selects the store that `useMid` reads: the app-wide mainnet store by default, or a testnet store (filled by REST polling) on the account page.
+- `lib/hyperliquid/mids.ts` keeps the mid prices from the shared socket. A listener subscribes to one coin, so a BTC tick re-renders only BTC rows. The testnet build fills the same store from the testnet socket, so the profile, the account page and the copy-trade sheet all use live testnet prices.
 - `app/api/resolve` and `app/api/names` resolve names on the server. `GET /api/resolve?name=` returns `{ address, name, kind }`, or 404 for an unknown name, 400 for an input that is not a `.eth` or `.hl` name, and 502 when the provider fails. `POST /api/names` takes up to 120 addresses and returns their `.hl` and ENS primary names. The browser never calls the RPC or the HL Names API. `lib/names/` holds the resolvers (server-only), the zod schemas, a small in-memory cache and the browser client. `lib/names.ts` holds the pure helpers (search input detection, display name priority).
 - `lib/calc/` holds the business logic as pure functions with Vitest tests: fill aggregation, the feed reducer, win rate, position PnL, chart series, leaderboard sort, and the liquidation estimate.
 - `lib/trading/` holds the testnet trading code. `config.ts` reads the mode, has the guard, and builds the network switch link. `order.ts` builds orders and reads order statuses. `agent.ts` stores the agent key. `errors.ts` maps failures to short messages. `exchange.ts` is the only module that calls the exchange endpoint, and only through `new HttpTransport({ isTestnet: true })`. The wallet code, wagmi and the SDK load in separate chunks, so the read-only build never downloads them.
@@ -106,7 +111,7 @@ flowchart LR
 
 ## Trade-offs
 
-- **Server-side leaderboard trim and cache.** The leaderboard file is undocumented and about 39 MB. The browser never downloads it. A route handler fetches it, keeps the top 100 rows by month PnL, and returns about 39 KB. The trimmed result has two cache layers: `unstable_cache` for 900 s and an in-memory copy with a 15 min TTL. If a refresh fails and older data exists, the route returns the older data with `stale: true`. If the shape changes and fewer than 10 rows parse, the route returns HTTP 502 and the UI shows an error with a retry button. The Day, Week and All tabs re-sort the same 100 rows, so a trader who is strong this week but not this month does not appear.
+- **Server-side leaderboard trim and cache.** The leaderboard file is undocumented and about 39 MB on mainnet (about 45 MB and 55,000 rows on testnet). The server downloads the file of its own network, and both cache keys hold the network. The browser never downloads it. A route handler fetches it, keeps the top 100 rows by month PnL, and returns about 39 KB. The trimmed result has two cache layers: `unstable_cache` for 900 s and an in-memory copy with a 15 min TTL. If a refresh fails and older data exists, the route returns the older data with `stale: true`. If the shape changes and fewer than 10 rows parse, the route returns HTTP 502 and the UI shows an error with a retry button. The Day, Week and All tabs re-sort the same 100 rows, so a trader who is strong this week but not this month does not appear.
 - **One socket with reference counts.** All `allMids` and `userFills` subscriptions share one connection. The first subscriber sends `subscribe` and the last one sends `unsubscribe`. The socket closes 5 s after the last subscriber leaves. After a reconnect, the snapshot replay could add old fills again. The feed reducer stops this with a set of seen `user:tid` keys and a per-trader time watermark.
 - **Client-side info calls.** Per-wallet calls (`clearinghouseState`, `userFills`, `portfolio`) go from the browser straight to the info endpoint, which allows any origin. This keeps the server stateless and cheap. The cost: each visitor uses their own rate limit, and the server cannot cache these calls.
 - **Liquidation estimate.** The sheet uses the isolated-margin formula: long `entry * (1 - 1/leverage + mmr)`, short `entry * (1 + 1/leverage - mmr)`. The maintenance margin rate is `1 / (2 * maxLeverage)` when the coin's max leverage is known, else 0.5%. It ignores cross margin, funding, fees and margin tiers. It is an approximation, not the exchange's number.
@@ -114,7 +119,7 @@ flowchart LR
 - **The Mark column shows the mid.** The app has no mark price feed. It uses the `allMids` mid, which is within a few ticks of the mark. Live PnL and ROE use the same mid.
 - **Names are best effort.** Names are an enhancement, not data that a view needs. The home page sends one `/api/names` request for the top 100 addresses and the followed traders. When a provider fails, the route returns the names of the other provider with `partial: true`. When the request fails, the rows show the display name or the short address, as before. The server caches each reverse result for 1 h, a found forward result for 24 h and an unknown name for 10 min, in memory per instance. A name change can therefore take up to 1 h to show. HL Names gets one bulk POST per 100 addresses. ENS uses viem multicall batching: 100 reverse lookups go out in 1 RPC request (about 850 ms cold, about 5 ms warm).
 - **Testnet trading behind a build flag.** Trading code exists in the repository but runs only in a build with `NEXT_PUBLIC_TRADING_MODE=testnet`. Each exchange function first calls a guard that throws unless the mode is exactly `testnet`, and the transport refuses any host other than `api.hyperliquid-testnet.xyz`. The user's wallet signs once (approveAgent). After that a generated agent key signs orders, so the user does not see a wallet prompt per order. The cost: the agent key lives in `localStorage`, so anyone with access to this browser profile can trade this testnet account until the agent expires (30 days) or the user forgets or deregisters it. An agent cannot withdraw.
-- **Testnet prices over REST.** The sheet polls testnet `allMids` every 3 s while it is open, and the account every 10 s. The account page does the same while it is open, and its fills every 30 s. The one shared socket stays on mainnet. Right before an order, the hook reads the mid again.
+- **One network per build.** A build reads the data of one network only. The network is a build-time value, so the server and the browser always agree, and one socket and one price store are enough. The cost: to look at the other network, open the other host (the pill in the header). The sheet reads the live mid from the shared socket. The account refreshes every 10 s while the sheet or the wallet popover is open, and the account page refreshes the account every 10 s and the fills every 30 s. Right before an order, the hook reads the mid once more over REST.
 - **No server push for alerts.** The app has no database, so there is nowhere to keep push subscriptions or a server-side watchlist. Alerts come from the same shared socket in the open tab. Without an open tab, no alert fires.
 - **Snapshots seed the feed.** The first `userFills` message after a subscribe is a snapshot. Its fills fill the feed on first load, without the slide-in animation. Only live fills animate.
 
@@ -138,7 +143,7 @@ flowchart LR
 - Markets from other perp DEXs (for example `xyz:NVDA`) have no live mid in `allMids`. Their sheet shows the last fill price as the mark.
 - The watchlist, the alert settings, the notices and the saved "My address" live in one browser. They do not sync across devices.
 - Alerts fire only while a Slipstream tab is open. There is no server push.
-- A cold `/api/leaderboard` request downloads the full file first. It takes about 7 s locally and can take longer on a cold serverless start.
+- A cold `/api/leaderboard` request downloads the full file first. It takes about 7 s locally on both networks and can take longer on a cold serverless start.
 - The `/dev` page (socket and feed diagnostics) is public but not linked.
 - The profile header shows the Hyperliquid display name only when the leaderboard is already loaded in the tab (for example after a click on a leaderboard row). The page `<title>` keeps the short address, because names load in the browser.
 - The default HL Names key is the public integration key from the provider's docs. It can have a rate limit. Set `HLNAMES_API_KEY` for a private key.
@@ -188,14 +193,16 @@ This mode places real orders on **Hyperliquid testnet**, with test funds. The ma
 Enable it at build time (the value is inlined into the browser bundle):
 
 ```bash
-NEXT_PUBLIC_TRADING_MODE=testnet pnpm dev -p 3100
+NEXT_PUBLIC_NETWORK=testnet pnpm dev -p 3100
 ```
+
+`NEXT_PUBLIC_TRADING_MODE=testnet` works the same way. The whole build then reads testnet data. Your own profile at `/trader/<your address>` on the testnet host shows your testnet account, with the same numbers as `/account`.
 
 The sheet then shows a **Testnet** badge and three steps:
 
 1. **Wallet.** Connect a browser wallet (for example MetaMask or Rabby). Slipstream never asks for your wallet key.
 2. **Agent.** Press "Approve agent" and sign once. The browser generates an agent key (a Hyperliquid API wallet). Your signature approves it on testnet for 30 days. The agent can trade but cannot withdraw.
-3. **Order.** Pick side, size and leverage. The sheet uses the testnet mid, your testnet balance and the testnet max leverage of the asset. "Place testnet order" sets the leverage when needed and sends an IOC limit order 1 % through the mid.
+3. **Order.** Pick side, size and leverage. The sheet uses the live testnet mid, your testnet balance and the testnet max leverage of the asset. "Place testnet order" sets the leverage when needed and sends an IOC limit order 1 % through the mid.
 
 What is stored: only the agent key, in `localStorage` under `slipstream.testnet.agent.<your address>`. "Forget agent" removes it from this browser. To deregister it on the exchange, use the API page of the testnet app (https://app.hyperliquid-testnet.xyz/API).
 
@@ -215,17 +222,17 @@ Limits: the minimum order is $10. Sizes are rounded down to the asset's size dec
 
 Two Vercel projects build the same repository, https://github.com/lukicenturi/slipstream. Each project has a Git connection to it. One build-time variable makes the difference:
 
-|                            | Mainnet                          | Testnet                                |
-| -------------------------- | -------------------------------- | -------------------------------------- |
-| URL                        | https://slipstream-hl.vercel.app | https://slipstream-testnet.vercel.app  |
-| `NEXT_PUBLIC_TRADING_MODE` | unset                            | `testnet`                              |
-| Copy-trade sheet           | demo, places no order            | real orders on Hyperliquid testnet     |
-| Market data                | mainnet                          | mainnet; the sheet uses testnet prices |
-| Header pill                | `MAINNET`, links to testnet      | `TESTNET` (amber), links to mainnet    |
+|                                                       | Mainnet                          | Testnet                                                   |
+| ----------------------------------------------------- | -------------------------------- | --------------------------------------------------------- |
+| URL                                                   | https://slipstream-hl.vercel.app | https://slipstream-testnet.vercel.app                     |
+| `NEXT_PUBLIC_NETWORK` (or `NEXT_PUBLIC_TRADING_MODE`) | unset                            | `testnet`                                                 |
+| Copy-trade sheet                                      | demo, places no order            | real orders on Hyperliquid testnet                        |
+| Data                                                  | mainnet                          | testnet: leaderboard, feed, profiles, prices and explorer |
+| Header pill                                           | `MAINNET`, links to testnet      | `TESTNET` (amber), links to mainnet                       |
 
 - **Network switch.** The pill in the header and a link in the footer open the other deployment. The link keeps the path for `/`, `/?view=live`, `/watchlist`, `/account` and `/trader/<address>`. Any other page links to the home page. It is a plain link between two hosts, as on app.hyperliquid.xyz and app.hyperliquid-testnet.xyz. The app never changes network at run time: the socket, the price store and `localStorage` belong to one host.
 - **Host addresses.** `NEXT_PUBLIC_MAINNET_URL` and `NEXT_PUBLIC_TESTNET_URL` set the two addresses that the switch uses. Without them, the switch uses the two production addresses above. Set them at build time, for example to link two preview deployments.
-- **Read-only by design.** The mainnet project never sets `NEXT_PUBLIC_TRADING_MODE`. Its bundle does not load the wallet or the exchange code, and no build can trade on mainnet.
+- **Read-only by design.** The mainnet project never sets `NEXT_PUBLIC_NETWORK` or `NEXT_PUBLIC_TRADING_MODE`. Its bundle does not load the wallet or the exchange code, and no build can trade on mainnet.
 
 ## Local development
 
@@ -258,7 +265,8 @@ All variables are optional. Without them the app works as is, read-only.
 | -------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `ETH_RPC_URL`                          | `https://ethereum-rpc.publicnode.com`   | Ethereum mainnet RPC for ENS lookups                                                                         |
 | `HLNAMES_API_KEY`                      | the public integration key of HL Names  | `X-API-Key` header for `api.hlnames.xyz`                                                                     |
-| `NEXT_PUBLIC_TRADING_MODE`             | unset (read-only)                       | `testnet` enables testnet trading. Any other value is read-only. Set it at build time.                       |
+| `NEXT_PUBLIC_NETWORK`                  | unset (mainnet, read-only)              | `testnet` makes a testnet build: testnet data everywhere and testnet trading. Set it at build time.          |
+| `NEXT_PUBLIC_TRADING_MODE`             | unset (mainnet, read-only)              | `testnet` has the same effect as `NEXT_PUBLIC_NETWORK=testnet`. Any other value changes nothing.             |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | unset                                   | A Reown project id adds WalletConnect (testnet build). Also run `pnpm add @walletconnect/ethereum-provider`. |
 | `NEXT_PUBLIC_MAINNET_URL`              | `https://slipstream-hl.vercel.app`      | The mainnet host that the network switch opens from the testnet build. Set it at build time.                 |
 | `NEXT_PUBLIC_TESTNET_URL`              | `https://slipstream-testnet.vercel.app` | The testnet host that the network switch opens from the mainnet build. Set it at build time.                 |
@@ -269,6 +277,7 @@ All variables are optional. Without them the app works as is, read-only.
 app/                 routes: home (?view=live for the feed alone), /trader/[address], /watchlist, /account, /api/leaderboard, /api/resolve, /api/names, /dev
 components/          layout, leaderboard, feed, trader, account, copy-trade, shared, ui (restyled shadcn)
 hooks/               data hooks (queries, socket, mids, feed, watchlist, alerts, notices)
+lib/network.ts       the network of the build and every Hyperliquid endpoint
 lib/hyperliquid/     schemas, REST client, socket, mids store, leaderboard trim
 lib/names/           ENS and HL Names resolvers (server-only), schemas, cache, browser client
 lib/calc/            pure business logic with tests

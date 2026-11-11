@@ -16,8 +16,8 @@ import { cn } from "@/lib/utils";
 const CELL = "px-3 text-right font-mono text-xs whitespace-nowrap";
 
 /**
- * One open position. The mark price is the live mid of the coin (from the
- * nearest MidsSourceProvider), read in this row, so a tick re-renders only the rows of that coin.
+ * One open position. The mark price is the live mid of the coin, read in
+ * this row, so a tick re-renders only the rows of that coin.
  * Before the first mid, the row shows the values from the API.
  */
 export const PositionRow = memo(function PositionRow({
@@ -25,7 +25,7 @@ export const PositionRow = memo(function PositionRow({
   showCopy = true,
 }: {
   position: Position;
-  /** False on the account page: it only reads, and the sheet copies mainnet positions. */
+  /** False on the account page: it shows your own positions and only reads. */
   showCopy?: boolean;
 }) {
   const mid = useMid(position.coin);

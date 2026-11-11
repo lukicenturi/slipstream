@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useConnectionLost, useReconnect } from "@/hooks/useConnectionStatus";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useTopTraderFeed } from "@/hooks/useTopTraderFeed";
+import { NETWORK } from "@/lib/network";
 
 import { FeedItem } from "./FeedItem";
 import { FeedTable } from "./FeedTable";
@@ -99,6 +100,7 @@ export function LiveFeed({
         traderCount > 0 ? (
           <>
             {table ? <span aria-hidden="true">· </span> : null}Top {traderCount} traders
+            {NETWORK === "testnet" ? " · Testnet" : null}
           </>
         ) : null
       }

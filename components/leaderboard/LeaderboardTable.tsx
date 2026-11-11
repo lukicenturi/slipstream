@@ -15,6 +15,7 @@ import {
   type LeaderboardSortKey,
 } from "@/lib/calc/leaderboard";
 import type { TimeWindow } from "@/lib/hyperliquid/schemas";
+import { NETWORK } from "@/lib/network";
 import { cn } from "@/lib/utils";
 
 import { LeaderboardRow } from "./LeaderboardRow";
@@ -102,7 +103,8 @@ export function LeaderboardTable({ className }: { className?: string }) {
       meta={
         data ? (
           <span className="hidden sm:inline">
-            Top {data.rows.length} by 30D PnL{data.stale ? " · stale" : ""}
+            Top {data.rows.length} by 30D PnL{NETWORK === "testnet" ? " · Testnet" : ""}
+            {data.stale ? " · stale" : ""}
           </span>
         ) : null
       }

@@ -35,7 +35,7 @@ function isTimeWindow(value: string): value is TimeWindow {
 }
 
 // ---------------------------------------------------------------------------
-// Leaderboard: GET https://stats-data.hyperliquid.xyz/Mainnet/leaderboard
+// Leaderboard: GET the raw file of the network (HL.leaderboardUrl in lib/network.ts)
 // ---------------------------------------------------------------------------
 
 /** The top-level envelope. Rows are checked one at a time. */
@@ -297,7 +297,7 @@ export const portfolioSchema = z
   });
 
 // ---------------------------------------------------------------------------
-// WebSocket: wss://api.hyperliquid.xyz/ws
+// WebSocket: the socket of the network (HL.wsUrl in lib/network.ts)
 // ---------------------------------------------------------------------------
 
 /** Spot markets start with "@" and builder markets with "#". We keep perps only. */

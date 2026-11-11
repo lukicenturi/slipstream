@@ -3,13 +3,16 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { getMeta } from "@/lib/hyperliquid/client";
-import { TESTNET } from "@/lib/trading/config";
+import { HL } from "@/lib/network";
 
-/** The testnet perp universe (asset ids, size decimals, max leverage). */
+/**
+ * The perp universe (asset ids, size decimals, max leverage). Only the
+ * testnet build calls it, so HL is the testnet info endpoint here.
+ */
 export function useTestnetMeta(enabled = true) {
   return useQuery({
     queryKey: ["testnet", "meta"],
-    queryFn: ({ signal }) => getMeta(TESTNET.infoUrl, { signal }),
+    queryFn: ({ signal }) => getMeta(HL.infoUrl, { signal }),
     staleTime: 10 * 60_000,
     enabled,
   });

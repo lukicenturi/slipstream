@@ -2,6 +2,7 @@
 
 import { useQueries } from "@tanstack/react-query";
 
+import { traderStateKey } from "@/hooks/useTrader";
 import { getClearinghouseState } from "@/lib/hyperliquid/client";
 import type { ClearinghouseState } from "@/lib/hyperliquid/schemas";
 
@@ -27,7 +28,7 @@ export function useWatchlistAccounts(
   const loaded = addresses.slice(0, MAX_WATCHLIST_ACCOUNTS);
   return useQueries({
     queries: loaded.map((address) => ({
-      queryKey: ["trader", address, "clearinghouseState"],
+      queryKey: traderStateKey(address),
       queryFn: ({ signal }: { signal: AbortSignal }) => getClearinghouseState(address, { signal }),
       staleTime: ACCOUNT_REFRESH_MS,
       refetchInterval: ACCOUNT_REFRESH_MS,

@@ -19,7 +19,8 @@ export function Footer() {
                 orders and gives no financial advice. Testnet trading is enabled in this build.
               </p>
               <p data-testid="footer-network">
-                This is the Hyperliquid testnet build. Orders use test funds only.{" "}
+                This is the Hyperliquid testnet build. All data comes from testnet, and orders use
+                test funds only.{" "}
                 <NetworkSwitchLink className={LINK_CLASS}>Switch to Mainnet</NetworkSwitchLink> for
                 the read-only app.
               </p>

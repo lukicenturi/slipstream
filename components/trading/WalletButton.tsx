@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTestnetAccount } from "@/hooks/useTestnetAccount";
+import { useTraderState } from "@/hooks/useTrader";
+import { ACCOUNT_REFRESH_MS } from "@/hooks/useTradingSession";
 import { EMPTY_VALUE, formatUsd, shortAddress } from "@/lib/format";
 
 import { ConnectWalletPopover } from "./ConnectWallet";
@@ -35,7 +36,11 @@ export default function WalletButton() {
   const disconnect = useDisconnect();
   const address = connection.address;
   const [open, setOpen] = useState(false);
-  const account = useTestnetAccount(address?.toLowerCase(), open);
+  // The profile's account query, so the popover, the sheet and /account share it.
+  const account = useTraderState(address?.toLowerCase(), {
+    enabled: open,
+    refetchInterval: open ? ACCOUNT_REFRESH_MS : false,
+  });
 
   if (!address) {
     return (

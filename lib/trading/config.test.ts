@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { ENDPOINTS } from "@/lib/network";
+
 import {
   assertTestnetTrading,
   DEFAULT_NETWORK_URLS,
@@ -13,7 +15,6 @@ import {
   parseTradingMode,
   sharedPath,
   TESTNET,
-  testnetExplorerUrl,
   TradingDisabledError,
 } from "./config";
 
@@ -45,13 +46,12 @@ describe("parseTradingMode", () => {
 });
 
 describe("TESTNET", () => {
-  it("points only at testnet hosts", () => {
-    for (const url of Object.values(TESTNET)) {
+  it("is the testnet endpoint table, on testnet hosts only", () => {
+    expect(TESTNET).toBe(ENDPOINTS.testnet);
+    for (const url of [TESTNET.infoUrl, TESTNET.wsUrl, TESTNET.appUrl, TESTNET.explorerUrl]) {
       expect(new URL(url).host).toMatch(/hyperliquid-testnet\.xyz$/);
     }
-    expect(testnetExplorerUrl("0xABC")).toBe(
-      "https://app.hyperliquid-testnet.xyz/explorer/address/0xabc",
-    );
+    expect(TESTNET.faucetUrl).toBe("https://app.hyperliquid-testnet.xyz/drip");
   });
 });
 
