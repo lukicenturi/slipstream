@@ -1,0 +1,4 @@
+.claude/
+screenshots/
+docs/
+*.tsbuildinfo

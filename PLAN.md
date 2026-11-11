@@ -108,15 +108,15 @@ Route: `/trader/[address]`
 
 ## Phase 4: copy-trade sheet and polish (2–3 h)
 
-- [ ] "Copy trade" button on position rows and feed cards opens a bottom sheet
-- [ ] Sheet: pre-filled asset and side, size slider, leverage slider, estimated margin and liquidation price (pure function, unit-tested)
-- [ ] Confirm button labelled "Demo, no order is placed"; pressing it shows a toast, nothing else
-- [ ] Unit tests: win rate, liquidation estimate, fill aggregation, formatters
-- [ ] Accessibility pass: keyboard navigation, focus states, colour is not the only signal for long/short
-- [ ] Performance pass: memoised rows, no re-render of the whole table on every price tick
-- [ ] README: GIF, architecture diagram, trade-offs (server-side leaderboard cache, single socket), known limits, "what I'd build next"
-- [ ] Deploy to Vercel; test on a real phone
-- [ ] Footer disclaimer: unofficial, read-only, not financial advice
+- [x] "Copy trade" button on position rows and feed cards opens a bottom sheet
+- [x] Sheet: pre-filled asset and side, size slider, leverage slider, estimated margin and liquidation price (pure function, unit-tested)
+- [x] Confirm button labelled "Demo, no order is placed"; pressing it shows a toast, nothing else
+- [x] Unit tests: win rate, liquidation estimate, fill aggregation, formatters
+- [x] Accessibility pass: keyboard navigation, focus states, colour is not the only signal for long/short
+- [x] Performance pass: memoised rows, no re-render of the whole table on every price tick
+- [x] README: GIF, architecture diagram, trade-offs (server-side leaderboard cache, single socket), known limits, "what I'd build next"
+- [x] Deploy to Vercel; test on a real phone (deployed to https://slipstream-alpha.vercel.app and checked at 375 px in headless Chromium; a physical phone test is still open, see DECISIONS.md)
+- [x] Footer disclaimer: unofficial, read-only, not financial advice
 
 **Done when:** live URL works on mobile and the README explains every major decision.
 
