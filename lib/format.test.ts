@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatClockTime,
+  formatClosedPnl,
   formatDuration,
   formatPercent,
   formatPrice,
@@ -125,5 +126,22 @@ describe("formatClockTime", () => {
 
   it("returns an em dash for a value that is not finite", () => {
     expect(formatClockTime(Number.NaN, now)).toBe("—");
+  });
+});
+
+describe("formatClosedPnl", () => {
+  it("returns null for an order that closed nothing", () => {
+    expect(formatClosedPnl(0)).toBe(null);
+    expect(formatClosedPnl(-0)).toBe(null);
+    expect(formatClosedPnl(0.004)).toBe(null);
+    expect(formatClosedPnl(-0.004)).toBe(null);
+    expect(formatClosedPnl(Number.NaN)).toBe(null);
+  });
+
+  it("signs and compacts a real PnL", () => {
+    expect(formatClosedPnl(12.345)).toBe("+$12.35");
+    expect(formatClosedPnl(-12.345)).toBe("-$12.35");
+    expect(formatClosedPnl(1234)).toBe("+$1.2K");
+    expect(formatClosedPnl(-2_500_000)).toBe("-$2.5M");
   });
 });

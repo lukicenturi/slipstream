@@ -113,8 +113,8 @@ export function networkHost(url: string): string {
 const TRADER_PATH = /^\/trader\/[^/?#]+$/;
 
 /**
- * The part of a path that exists on both hosts: `/`, `/watchlist` and
- * `/trader/<address>`. On `/` it keeps `?view=live` (the mobile feed).
+ * The part of a path that exists on both hosts: `/`, `/watchlist`,
+ * `/account` and `/trader/<address>`. On `/` it keeps `?view=live` (the mobile feed).
  * Any other path, and any other query, becomes `/`.
  */
 export function sharedPath(path: string): string {
@@ -124,7 +124,9 @@ export function sharedPath(path: string): string {
   if (pathname === "/") {
     return new URLSearchParams(query).get("view") === "live" ? "/?view=live" : "/";
   }
-  if (pathname === "/watchlist" || TRADER_PATH.test(pathname)) return pathname;
+  if (pathname === "/watchlist" || pathname === "/account" || TRADER_PATH.test(pathname)) {
+    return pathname;
+  }
   return "/";
 }
 

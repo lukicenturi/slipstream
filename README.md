@@ -26,15 +26,16 @@ The previous address, https://slipstream-alpha.vercel.app, still works. A link i
 ## Features
 
 - **Leaderboard.** The top 100 traders by month PnL, with Day, Week, Month and All windows. Account value, PnL and ROI columns sort in both directions.
-- **Live feed.** Orders of the top 20 traders arrive in real time. On mobile it has its own tab in the bottom bar (`/?view=live`). Partial fills of one order join into one row. The feed keeps at most 100 rows and drops duplicates after a reconnect.
+- **Live feed.** Orders of the top 20 traders arrive in real time. `/?view=live` opens the feed alone: on mobile as the row list (its own tab in the bottom bar), on desktop as a dense full-width table with Time, Trader, Action, Asset, Size @ Price, Notional and Closed PnL columns. `/` on desktop shows the leaderboard and the feed side by side. Partial fills of one order join into one row. The feed keeps at most 100 rows and drops duplicates after a reconnect.
 - **Name search.** The header search accepts an address, an ENS name (`vitalik.eth`) or a Hyperliquid Names name (`testooor.hl`). The server resolves the name, and the search opens `/trader/<address>`. The search shows a clear message when a name has no address, when the lookup fails, and when the input is not valid.
 - **Names instead of addresses.** The leaderboard, the live feed, the watching chips and the profile header show a name when one exists. The order is: the Hyperliquid display name, then the `.hl` primary name, then the ENS primary name, then the short address.
 - **Trader profile.** Go to `/trader/<address>`. It shows account value, live unrealized PnL, win rate, open positions with a live mark price, a PnL chart and the last 50 orders.
 - **Tracking and alerts.** Star a trader on a leaderboard row or a feed row, or press "Follow" on the profile. `/watchlist` lists every tracked trader with account value, live unrealized PnL, open positions, the last trade, an alert switch and a remove button. Its form accepts an address, a `.eth` name or a `.hl` name. While a Slipstream tab is open, each new live order of a tracked trader becomes a notice: a toast, a row in the header bell, and (when you allow it) a browser notification. See [Tracking and alerts](#tracking-and-alerts).
+- **Account page.** `/account` has a "My address" section: save a mainnet address, a `.eth` name or a `.hl` name once, and the page shows that trader profile. "Change" and "Forget" edit it. The value stays in this browser (`slipstream.myAddress`). In the testnet build, the page first shows the connected wallet's testnet account: account value, USDC available, margin used, live unrealized PnL at testnet prices, testnet positions and fills, the testnet explorer link, a link to the same address on the mainnet host, and a faucet link when the wallet has no testnet funds. The page only reads; it sends no exchange request.
 - **Copy-trade sheet (demo).** Each position row and each perp feed row has a "Copy" button. The sheet shows side, size, leverage, the estimated margin and the estimated liquidation price. The confirm button says "Demo, no order is placed". It shows a toast and does nothing else.
-- **Testnet copy trade (testnet build only).** Connect a browser wallet, approve a Slipstream agent once, then place a market-like IOC order on Hyperliquid testnet from the same sheet.
+- **Testnet copy trade (testnet build only).** Connect a browser wallet, approve a Slipstream agent once, then place a market-like IOC order on Hyperliquid testnet from the same sheet. The wallet popover in the header shows "USDC available", "Account value" and a "My account" link.
 - **Network switch.** A small pill in the header shows the network of this deployment (`MAINNET` in grey or `TESTNET` in amber) and links to the other deployment. It keeps the current page when the other deployment has it. The footer has the same link.
-- **Navigation.** Desktop nav links (Leaderboard, Live, Watchlist) in the header and a mobile bottom tab bar with the same three destinations. `/?view=live` opens the live feed on mobile; on desktop both panels show.
+- **Navigation.** Desktop nav links (Leaderboard, Live, Watchlist, Account) in the header and a mobile bottom tab bar with the same four destinations. `Live` is active on `/?view=live` at every width.
 - **Asset icons.** Coin names in the feed, the positions table, the fills list and the sheet have a 16 px icon (24 px in the sheet). Icons come from `app.hyperliquid.xyz/coins/<COIN>.svg`. A coin without an icon (other perp DEXs such as `xyz:NVDA`, spot ids such as `@107`, or a failed image) shows a 2-letter monogram in the same box, so rows keep their height.
 
 ## Architecture
@@ -84,7 +85,7 @@ flowchart LR
 
 - `lib/hyperliquid/schemas.ts` holds the zod schemas. They come from real responses in `fixtures/`. Every response goes through them. Numbers arrive as strings and become numbers in the schema layer, so components only see parsed types.
 - `lib/hyperliquid/ws.ts` is the only place that opens a socket. It counts references per subscription, reconnects with exponential backoff and jitter, subscribes again after a reconnect, and sends a ping every 50 s.
-- `lib/hyperliquid/mids.ts` keeps the mid prices. A listener subscribes to one coin, so a BTC tick re-renders only BTC rows.
+- `lib/hyperliquid/mids.ts` keeps the mid prices. A listener subscribes to one coin, so a BTC tick re-renders only BTC rows. `MidsSourceProvider` selects the store that `useMid` reads: the app-wide mainnet store by default, or a testnet store (filled by REST polling) on the account page.
 - `app/api/resolve` and `app/api/names` resolve names on the server. `GET /api/resolve?name=` returns `{ address, name, kind }`, or 404 for an unknown name, 400 for an input that is not a `.eth` or `.hl` name, and 502 when the provider fails. `POST /api/names` takes up to 120 addresses and returns their `.hl` and ENS primary names. The browser never calls the RPC or the HL Names API. `lib/names/` holds the resolvers (server-only), the zod schemas, a small in-memory cache and the browser client. `lib/names.ts` holds the pure helpers (search input detection, display name priority).
 - `lib/calc/` holds the business logic as pure functions with Vitest tests: fill aggregation, the feed reducer, win rate, position PnL, chart series, leaderboard sort, and the liquidation estimate.
 - `lib/trading/` holds the testnet trading code. `config.ts` reads the mode, has the guard, and builds the network switch link. `order.ts` builds orders and reads order statuses. `agent.ts` stores the agent key. `errors.ts` maps failures to short messages. `exchange.ts` is the only module that calls the exchange endpoint, and only through `new HttpTransport({ isTestnet: true })`. The wallet code, wagmi and the SDK load in separate chunks, so the read-only build never downloads them.
@@ -113,7 +114,7 @@ flowchart LR
 - **The Mark column shows the mid.** The app has no mark price feed. It uses the `allMids` mid, which is within a few ticks of the mark. Live PnL and ROE use the same mid.
 - **Names are best effort.** Names are an enhancement, not data that a view needs. The home page sends one `/api/names` request for the top 100 addresses and the followed traders. When a provider fails, the route returns the names of the other provider with `partial: true`. When the request fails, the rows show the display name or the short address, as before. The server caches each reverse result for 1 h, a found forward result for 24 h and an unknown name for 10 min, in memory per instance. A name change can therefore take up to 1 h to show. HL Names gets one bulk POST per 100 addresses. ENS uses viem multicall batching: 100 reverse lookups go out in 1 RPC request (about 850 ms cold, about 5 ms warm).
 - **Testnet trading behind a build flag.** Trading code exists in the repository but runs only in a build with `NEXT_PUBLIC_TRADING_MODE=testnet`. Each exchange function first calls a guard that throws unless the mode is exactly `testnet`, and the transport refuses any host other than `api.hyperliquid-testnet.xyz`. The user's wallet signs once (approveAgent). After that a generated agent key signs orders, so the user does not see a wallet prompt per order. The cost: the agent key lives in `localStorage`, so anyone with access to this browser profile can trade this testnet account until the agent expires (30 days) or the user forgets or deregisters it. An agent cannot withdraw.
-- **Testnet prices over REST.** The sheet polls testnet `allMids` every 3 s while it is open, and the account every 10 s. The one shared socket stays on mainnet. Right before an order, the hook reads the mid again.
+- **Testnet prices over REST.** The sheet polls testnet `allMids` every 3 s while it is open, and the account every 10 s. The account page does the same while it is open, and its fills every 30 s. The one shared socket stays on mainnet. Right before an order, the hook reads the mid again.
 - **No server push for alerts.** The app has no database, so there is nowhere to keep push subscriptions or a server-side watchlist. Alerts come from the same shared socket in the open tab. Without an open tab, no alert fires.
 - **Snapshots seed the feed.** The first `userFills` message after a subscribe is a snapshot. Its fills fill the feed on first load, without the slide-in animation. Only live fills animate.
 
@@ -135,7 +136,7 @@ flowchart LR
 - The feed follows the top 20 traders only. About 15 of them usually send a snapshot; the others have no recent fills.
 - Spot fills show the raw market id (for example `@107`), because the app does not load spot metadata. Spot rows have no "Copy" button.
 - Markets from other perp DEXs (for example `xyz:NVDA`) have no live mid in `allMids`. Their sheet shows the last fill price as the mark.
-- The watchlist, the alert settings and the notices live in one browser. They do not sync across devices.
+- The watchlist, the alert settings, the notices and the saved "My address" live in one browser. They do not sync across devices.
 - Alerts fire only while a Slipstream tab is open. There is no server push.
 - A cold `/api/leaderboard` request downloads the full file first. It takes about 7 s locally and can take longer on a cold serverless start.
 - The `/dev` page (socket and feed diagnostics) is public but not linked.
@@ -176,6 +177,7 @@ What is stored, all in `localStorage` of this browser:
 | `slipstream.watchlist`     | the tracked addresses (unchanged format)            |
 | `slipstream.alerts`        | the global settings and the per-trader alert switch |
 | `slipstream.notifications` | the last 50 notices, newest first                   |
+| `slipstream.myAddress`     | the saved "My address" of the account page          |
 
 Limits: alerts fire only while a Slipstream tab is open. There is no server push, because the app has no database to keep push subscriptions. Browser notifications need your permission. The watchlist page loads account data for the first 50 traders; alerts work for all of them.
 
@@ -221,7 +223,7 @@ Two Vercel projects build the same repository, https://github.com/lukicenturi/sl
 | Market data                | mainnet                          | mainnet; the sheet uses testnet prices |
 | Header pill                | `MAINNET`, links to testnet      | `TESTNET` (amber), links to mainnet    |
 
-- **Network switch.** The pill in the header and a link in the footer open the other deployment. The link keeps the path for `/`, `/?view=live`, `/watchlist` and `/trader/<address>`. Any other page links to the home page. It is a plain link between two hosts, as on app.hyperliquid.xyz and app.hyperliquid-testnet.xyz. The app never changes network at run time: the socket, the price store and `localStorage` belong to one host.
+- **Network switch.** The pill in the header and a link in the footer open the other deployment. The link keeps the path for `/`, `/?view=live`, `/watchlist`, `/account` and `/trader/<address>`. Any other page links to the home page. It is a plain link between two hosts, as on app.hyperliquid.xyz and app.hyperliquid-testnet.xyz. The app never changes network at run time: the socket, the price store and `localStorage` belong to one host.
 - **Host addresses.** `NEXT_PUBLIC_MAINNET_URL` and `NEXT_PUBLIC_TESTNET_URL` set the two addresses that the switch uses. Without them, the switch uses the two production addresses above. Set them at build time, for example to link two preview deployments.
 - **Read-only by design.** The mainnet project never sets `NEXT_PUBLIC_TRADING_MODE`. Its bundle does not load the wallet or the exchange code, and no build can trade on mainnet.
 
@@ -264,8 +266,8 @@ All variables are optional. Without them the app works as is, read-only.
 ## Project layout
 
 ```
-app/                 routes: home (?view=live for the feed on mobile), /trader/[address], /watchlist, /api/leaderboard, /api/resolve, /api/names, /dev
-components/          layout, leaderboard, feed, trader, copy-trade, shared, ui (restyled shadcn)
+app/                 routes: home (?view=live for the feed alone), /trader/[address], /watchlist, /account, /api/leaderboard, /api/resolve, /api/names, /dev
+components/          layout, leaderboard, feed, trader, account, copy-trade, shared, ui (restyled shadcn)
 hooks/               data hooks (queries, socket, mids, feed, watchlist, alerts, notices)
 lib/hyperliquid/     schemas, REST client, socket, mids store, leaderboard trim
 lib/names/           ENS and HL Names resolvers (server-only), schemas, cache, browser client

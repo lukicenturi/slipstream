@@ -7,16 +7,36 @@ import { Panel } from "@/components/shared/Panel";
 import { EmptyState, ErrorState, SkeletonRows } from "@/components/shared/States";
 import { Button } from "@/components/ui/button";
 import { useConnectionLost, useReconnect } from "@/hooks/useConnectionStatus";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useTopTraderFeed } from "@/hooks/useTopTraderFeed";
 
 import { FeedItem } from "./FeedItem";
+import { FeedTable } from "./FeedTable";
 
-/** Live orders of the top traders. Every subscription uses the shared socket. */
-export function LiveFeed({ className }: { className?: string }) {
+/** The Tailwind `lg` breakpoint, where the wide layout shows the table. */
+const DESKTOP_QUERY = "(min-width: 64rem)";
+
+export type LiveFeedLayout = "panel" | "wide";
+
+/**
+ * Live orders of the top traders. Every subscription uses the shared socket.
+ * The feed state lives here, so a change of `layout` keeps the items.
+ * `panel`: the two-line row list (the home split, and mobile).
+ * `wide`: from `lg` up, a dense full-width table; below `lg`, the row list.
+ */
+export function LiveFeed({
+  className,
+  layout = "panel",
+}: {
+  className?: string;
+  layout?: LiveFeedLayout;
+}) {
   const { feed, names, traderCount, leaderboardPending, leaderboardError, refetchLeaderboard } =
     useTopTraderFeed();
   const lost = useConnectionLost();
   const reconnect = useReconnect();
+  const isDesktop = useMediaQuery(DESKTOP_QUERY);
+  const table = layout === "wide" && isDesktop;
   const { items } = feed;
 
   let body: React.ReactNode;
@@ -29,7 +49,13 @@ export function LiveFeed({ className }: { className?: string }) {
       />
     );
   } else if (leaderboardPending) {
-    body = <SkeletonRows rows={8} rowClassName="h-10" label="Loading the live feed" />;
+    body = (
+      <SkeletonRows
+        rows={table ? 16 : 8}
+        rowClassName={table ? undefined : "h-10"}
+        label="Loading the live feed"
+      />
+    );
   } else if (items.length === 0 && lost) {
     body = (
       <ErrorState
@@ -52,11 +78,15 @@ export function LiveFeed({ className }: { className?: string }) {
     body = (
       <>
         {lost ? <LostBanner onReconnect={reconnect} /> : null}
-        <ol aria-label="Live trades" data-testid="feed-list">
-          {items.map((item) => (
-            <FeedItem key={item.id} item={item} name={names.get(item.user)} />
-          ))}
-        </ol>
+        {table ? (
+          <FeedTable items={items} names={names} />
+        ) : (
+          <ol aria-label="Live trades" data-testid="feed-list">
+            {items.map((item) => (
+              <FeedItem key={item.id} item={item} name={names.get(item.user)} />
+            ))}
+          </ol>
+        )}
       </>
     );
   }
@@ -65,8 +95,13 @@ export function LiveFeed({ className }: { className?: string }) {
     <Panel
       title="Live trades"
       titleId="live-title"
-      focusableTitle
-      meta={traderCount > 0 ? `Top ${traderCount} traders` : null}
+      meta={
+        traderCount > 0 ? (
+          <>
+            {table ? <span aria-hidden="true">· </span> : null}Top {traderCount} traders
+          </>
+        ) : null
+      }
       actions={
         items.length > 0 ? (
           <span className="font-mono text-2xs text-faint" data-testid="feed-count">

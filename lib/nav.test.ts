@@ -3,8 +3,19 @@ import { describe, expect, it } from "vitest";
 import { activeNavKey, NAV_ITEMS, navCountBadge, parseHomeView } from "./nav";
 
 describe("NAV_ITEMS", () => {
-  it("lists the three destinations in order", () => {
-    expect(NAV_ITEMS.map((item) => item.href)).toEqual(["/", "/?view=live", "/watchlist"]);
+  it("lists the four destinations in order", () => {
+    expect(NAV_ITEMS.map((item) => item.href)).toEqual([
+      "/",
+      "/?view=live",
+      "/watchlist",
+      "/account",
+    ]);
+  });
+
+  it("labels the account item and gives it the user icon", () => {
+    const account = NAV_ITEMS.find((item) => item.key === "account");
+    expect(account?.label).toBe("Account");
+    expect(account?.icon).toBe("user");
   });
 });
 
@@ -23,31 +34,30 @@ describe("parseHomeView", () => {
 });
 
 describe("activeNavKey", () => {
-  it("marks the watchlist on /watchlist at every width", () => {
-    expect(activeNavKey("/watchlist", null, false)).toBe("watchlist");
-    expect(activeNavKey("/watchlist", "live", true)).toBe("watchlist");
+  it("marks the watchlist on /watchlist", () => {
+    expect(activeNavKey("/watchlist", null)).toBe("watchlist");
+    expect(activeNavKey("/watchlist", "live")).toBe("watchlist");
   });
 
-  it("marks live on /?view=live on mobile", () => {
-    expect(activeNavKey("/", "live", false)).toBe("live");
+  it("marks the account on /account", () => {
+    expect(activeNavKey("/account", null)).toBe("account");
+    expect(activeNavKey("/account", "live")).toBe("account");
   });
 
-  it("marks the leaderboard on / on mobile without the live view", () => {
-    expect(activeNavKey("/", null, false)).toBe("leaderboard");
-    expect(activeNavKey("/", "other", false)).toBe("leaderboard");
+  it("marks live on /?view=live (the same at every width)", () => {
+    expect(activeNavKey("/", "live")).toBe("live");
   });
 
-  it("always marks the leaderboard on / on desktop", () => {
-    expect(activeNavKey("/", null, true)).toBe("leaderboard");
-    expect(activeNavKey("/", "live", true)).toBe("leaderboard");
+  it("marks the leaderboard on / without the live view", () => {
+    expect(activeNavKey("/", null)).toBe("leaderboard");
+    expect(activeNavKey("/", "other")).toBe("leaderboard");
   });
 
   it("marks nothing on other routes", () => {
-    expect(activeNavKey("/trader/0xf5d81a135f756ca16544e53c20fc20643ec3ad53", null, false)).toBe(
-      null,
-    );
-    expect(activeNavKey("/dev", "live", true)).toBe(null);
-    expect(activeNavKey("/watchlist/extra", null, false)).toBe(null);
+    expect(activeNavKey("/trader/0xf5d81a135f756ca16544e53c20fc20643ec3ad53", null)).toBe(null);
+    expect(activeNavKey("/dev", "live")).toBe(null);
+    expect(activeNavKey("/watchlist/extra", null)).toBe(null);
+    expect(activeNavKey("/account/extra", null)).toBe(null);
   });
 });
 

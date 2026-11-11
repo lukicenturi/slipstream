@@ -7,6 +7,7 @@ export const NAV_ITEMS = [
   { key: "leaderboard", label: "Leaderboard", href: "/", icon: "trophy" },
   { key: "live", label: "Live", href: "/?view=live", icon: "activity" },
   { key: "watchlist", label: "Watchlist", href: "/watchlist", icon: "bookmark" },
+  { key: "account", label: "Account", href: "/account", icon: "user" },
 ] as const;
 
 export type NavItem = (typeof NAV_ITEMS)[number];
@@ -15,25 +16,23 @@ export type NavIcon = NavItem["icon"];
 
 export type HomeView = "leaderboard" | "live";
 
-/** The mobile view of the home page. Only the exact string "live" selects the feed. */
+/**
+ * The view of the home page. Only the exact string "live" selects the feed:
+ * on mobile it shows only the feed, on desktop the full-width feed table.
+ */
 export function parseHomeView(view: string | null): HomeView {
   return view === "live" ? "live" : "leaderboard";
 }
 
 /**
- * The active nav item for a URL. On desktop the home page shows both panels,
- * so `/` is always "leaderboard" there. Other routes (a profile, /dev) have
- * no active item.
+ * The active nav item for a URL. The result is the same at every width:
+ * `/?view=live` is "live" on mobile (feed only) and on desktop (full-width
+ * feed). Other routes (a profile, /dev) have no active item.
  */
-export function activeNavKey(
-  pathname: string,
-  view: string | null,
-  isDesktop: boolean,
-): NavKey | null {
+export function activeNavKey(pathname: string, view: string | null): NavKey | null {
   if (pathname === "/watchlist") return "watchlist";
-  if (pathname === "/") {
-    return !isDesktop && parseHomeView(view) === "live" ? "live" : "leaderboard";
-  }
+  if (pathname === "/account") return "account";
+  if (pathname === "/") return parseHomeView(view) === "live" ? "live" : "leaderboard";
   return null;
 }
 

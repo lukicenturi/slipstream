@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { RelativeTime } from "./RelativeTime";
 
 /** Spot (`@107`) and builder (`#114910`) markets cannot be copied as perps. */
-function isPerpCoin(coin: string): boolean {
+export function isPerpCoin(coin: string): boolean {
   return !coin.startsWith("@") && !coin.startsWith("#");
 }
 

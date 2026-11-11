@@ -16,11 +16,18 @@ import { cn } from "@/lib/utils";
 const CELL = "px-3 text-right font-mono text-xs whitespace-nowrap";
 
 /**
- * One open position. The mark price is the live mid of the coin, read in
- * this row, so a tick re-renders only the rows of that coin.
+ * One open position. The mark price is the live mid of the coin (from the
+ * nearest MidsSourceProvider), read in this row, so a tick re-renders only the rows of that coin.
  * Before the first mid, the row shows the values from the API.
  */
-export const PositionRow = memo(function PositionRow({ position }: { position: Position }) {
+export const PositionRow = memo(function PositionRow({
+  position,
+  showCopy = true,
+}: {
+  position: Position;
+  /** False on the account page: it only reads, and the sheet copies mainnet positions. */
+  showCopy?: boolean;
+}) {
   const mid = useMid(position.coin);
   const pnl = unrealizedPnl(position, mid);
   const roe = returnOnEquity(position, pnl, mid);
@@ -70,15 +77,17 @@ export const PositionRow = memo(function PositionRow({ position }: { position: P
           formatPrice(position.liquidationPx)
         )}
       </td>
-      <td className="px-3 text-right">
-        <CopyTradeButton
-          coin={position.coin}
-          side={position.side}
-          fallbackMarkPx={apiMark}
-          maxLeverage={position.maxLeverage}
-          leverage={position.leverage}
-        />
-      </td>
+      {showCopy ? (
+        <td className="px-3 text-right">
+          <CopyTradeButton
+            coin={position.coin}
+            side={position.side}
+            fallbackMarkPx={apiMark}
+            maxLeverage={position.maxLeverage}
+            leverage={position.leverage}
+          />
+        </td>
+      ) : null}
     </tr>
   );
 });

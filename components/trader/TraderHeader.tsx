@@ -1,19 +1,17 @@
 "use client";
 
 import { CopyIcon, ExternalLinkIcon } from "lucide-react";
-import type { ReactNode } from "react";
 import { toast } from "sonner";
 
+import { Stat, STAT_GRID, StatNote, StatValue } from "@/components/shared/Stat";
 import { EmptyState, ErrorState } from "@/components/shared/States";
 import { signTone } from "@/components/shared/tone";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useLiveUnrealizedPnl } from "@/hooks/useLiveUnrealizedPnl";
 import { useProfileDisplayName } from "@/hooks/useNames";
 import type { WinRate } from "@/lib/calc/winRate";
 import { EMPTY_VALUE, formatPercent, formatUsd, shortAddress } from "@/lib/format";
 import type { ClearinghouseState } from "@/lib/hyperliquid/schemas";
-import { cn } from "@/lib/utils";
 
 import { FollowButton } from "./FollowButton";
 
@@ -23,7 +21,7 @@ export function explorerUrl(address: string): string {
   return `https://app.hyperliquid.xyz/explorer/address/${address}`;
 }
 
-async function copyAddress(address: string): Promise<void> {
+export async function copyAddress(address: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(address);
     toast("Address copied");
@@ -143,10 +141,7 @@ export function TraderHeader({
           />
         </div>
       ) : (
-        <dl
-          data-testid="trader-stats"
-          className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4"
-        >
+        <dl data-testid="trader-stats" className={STAT_GRID}>
           <Stat label="Account value" loading={stateStatus === "pending"}>
             {state ? (
               <>
@@ -173,46 +168,6 @@ export function TraderHeader({
       )}
     </section>
   );
-}
-
-function Stat({
-  label,
-  loading,
-  children,
-}: {
-  label: string;
-  loading: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex min-w-0 flex-col gap-1 bg-background px-3 py-2.5">
-      <dt className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
-        {label}
-      </dt>
-      <dd className="flex min-w-0 flex-col gap-0.5">
-        {loading ? (
-          <>
-            <Skeleton className="h-[22px] w-24 lg:h-[26px]" />
-            <Skeleton className="h-3 w-16" />
-          </>
-        ) : (
-          children
-        )}
-      </dd>
-    </div>
-  );
-}
-
-function StatValue({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <span className={cn("truncate font-mono text-lg text-foreground lg:text-xl", className)}>
-      {children}
-    </span>
-  );
-}
-
-function StatNote({ children }: { children: ReactNode }) {
-  return <span className="truncate text-2xs text-faint">{children}</span>;
 }
 
 /** Re-renders on every tick of a position coin, so it stays a small leaf. */

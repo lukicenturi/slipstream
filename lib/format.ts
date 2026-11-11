@@ -154,3 +154,15 @@ export function formatClockTime(timeMs: number, now: number = Date.now()): strin
     date.getDate() === today.getDate();
   return sameDay ? clock : `${MONTHS[date.getMonth()]} ${date.getDate()} ${clock}`;
 }
+
+/** Closed PnL below half a cent counts as none (an opening order). */
+const PNL_EPSILON = 0.005;
+
+/**
+ * The closed PnL of an order for a table cell: "+$1.2K" or "-$12.34", or
+ * null when the order closed nothing (the cell stays blank).
+ */
+export function formatClosedPnl(value: number): string | null {
+  if (!Number.isFinite(value) || Math.abs(value) < PNL_EPSILON) return null;
+  return formatUsd(value, { compact: true, signed: true });
+}

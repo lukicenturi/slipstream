@@ -137,11 +137,11 @@ export function getClearinghouseState(
   );
 }
 
-export function getUserFills(address: string, options: RequestOptions = {}): Promise<Fill[]> {
+export function getUserFills(address: string, options: InfoOptions = {}): Promise<Fill[]> {
   return infoRequest({ type: "userFills", user: address.toLowerCase() }, userFillsSchema, options);
 }
 
-export function getPortfolio(address: string, options: RequestOptions = {}): Promise<Portfolio> {
+export function getPortfolio(address: string, options: InfoOptions = {}): Promise<Portfolio> {
   return infoRequest({ type: "portfolio", user: address.toLowerCase() }, portfolioSchema, options);
 }
 

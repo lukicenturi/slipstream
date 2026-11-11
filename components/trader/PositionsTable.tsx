@@ -9,31 +9,44 @@ import type { Position } from "@/lib/hyperliquid/schemas";
 import { PositionRow } from "./PositionRow";
 import type { QueryStatus } from "./TraderHeader";
 
-const COLUMNS = [
-  "Side",
-  "Size",
-  "Leverage",
-  "Entry",
-  "Mark",
-  "Unrealized PnL (ROE)",
-  "Liq. price",
-] as const;
-
 /**
  * Open positions, largest first. The table scrolls sideways on narrow
- * screens; the Asset column stays in place.
+ * screens; the Asset column stays in place. The mark price comes from the
+ * nearest MidsSourceProvider (mainnet by default). The account page passes
+ * its own title, id, mark label and empty texts, and hides the Copy buttons.
  */
 export function PositionsTable({
   positions,
   status,
   onRetry,
   className,
+  title = "Positions",
+  titleId = "positions-title",
+  markLabel = "Mark",
+  showCopy = true,
+  emptyTitle = "No open positions",
+  emptyDescription = "This trader holds no perps now.",
 }: {
   positions: readonly Position[] | undefined;
   status: QueryStatus;
   onRetry: () => void;
   className?: string;
+  title?: string;
+  titleId?: string;
+  markLabel?: string;
+  showCopy?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
+  const columns = [
+    "Side",
+    "Size",
+    "Leverage",
+    "Entry",
+    markLabel,
+    "Unrealized PnL (ROE)",
+    "Liq. price",
+  ];
   const sorted = useMemo(
     () =>
       positions
@@ -54,7 +67,7 @@ export function PositionsTable({
   } else if (status === "pending") {
     body = <SkeletonRows rows={3} label="Loading positions" />;
   } else if (sorted.length === 0) {
-    body = <EmptyState title="No open positions" description="This trader holds no perps now." />;
+    body = <EmptyState title={emptyTitle} description={emptyDescription} />;
   } else {
     body = (
       // "relative" keeps the sr-only caption (absolute) inside the scroll box,
@@ -72,7 +85,7 @@ export function PositionsTable({
               >
                 Asset
               </th>
-              {COLUMNS.map((label) => (
+              {columns.map((label) => (
                 <th
                   key={label}
                   scope="col"
@@ -85,14 +98,16 @@ export function PositionsTable({
                   {label}
                 </th>
               ))}
-              <th scope="col" className="px-3 text-right font-normal">
-                <span className="sr-only">Actions</span>
-              </th>
+              {showCopy ? (
+                <th scope="col" className="px-3 text-right font-normal">
+                  <span className="sr-only">Actions</span>
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody data-testid="positions-rows">
             {sorted.map((position) => (
-              <PositionRow key={position.coin} position={position} />
+              <PositionRow key={position.coin} position={position} showCopy={showCopy} />
             ))}
           </tbody>
         </table>
@@ -102,8 +117,8 @@ export function PositionsTable({
 
   return (
     <Panel
-      title="Positions"
-      titleId="positions-title"
+      title={title}
+      titleId={titleId}
       titleOnMobile
       meta={status === "success" ? `${sorted.length} open` : null}
       className={className}

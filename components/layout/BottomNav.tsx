@@ -16,7 +16,7 @@ import { NAV_ICONS } from "./navIcons";
  * so the parent must wrap it in <Suspense fallback={<BottomNavLinks active={null} />}>.
  */
 export function BottomNav() {
-  const active = useActiveNavKey(false);
+  const active = useActiveNavKey();
   return <BottomNavLinks active={active} />;
 }
 

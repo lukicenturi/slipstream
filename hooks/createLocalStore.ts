@@ -5,6 +5,7 @@
  * hooks/useWatchlist.ts: one value, one listener set, a `storage` event
  * listener for changes from other tabs, and try/catch on every storage
  * access. When storage fails, the value still works for this session.
+ * A store whose value can be null removes the key when the value is null.
  */
 
 export interface LocalStore<T> {
@@ -34,7 +35,8 @@ export function createLocalStore<T>(
 
   function write(next: T): void {
     try {
-      window.localStorage.setItem(key, JSON.stringify(next));
+      if (next === null) window.localStorage.removeItem(key);
+      else window.localStorage.setItem(key, JSON.stringify(next));
     } catch {
       // Storage is not available. The in-memory value still holds the change.
     }

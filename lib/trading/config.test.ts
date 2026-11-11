@@ -106,6 +106,9 @@ describe("sharedPath", () => {
     ["/?view=live&x=1", "/?view=live"],
     ["/watchlist", "/watchlist"],
     ["/watchlist?view=live", "/watchlist"],
+    ["/account", "/account"],
+    ["/account?x=1", "/account"],
+    ["/account/extra", "/"],
     [
       "/trader/0xf5d81a135f756ca16544e53c20fc20643ec3ad53",
       "/trader/0xf5d81a135f756ca16544e53c20fc20643ec3ad53",

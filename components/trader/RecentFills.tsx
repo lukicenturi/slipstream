@@ -19,11 +19,19 @@ export function RecentFills({
   status,
   onRetry,
   className,
+  title = "Recent fills",
+  titleId = "fills-title",
+  emptyTitle = "No fills yet",
+  emptyDescription = "This trader has no recorded trades.",
 }: {
   fills: readonly Fill[] | undefined;
   status: QueryStatus;
   onRetry: () => void;
   className?: string;
+  title?: string;
+  titleId?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
   const items = useMemo(
     () => (fills ? aggregateFills(fills).slice(0, RECENT_ORDER_COUNT) : []),
@@ -42,7 +50,7 @@ export function RecentFills({
   } else if (status === "pending") {
     body = <SkeletonRows rows={6} rowClassName="h-10" label="Loading fills" />;
   } else if (items.length === 0) {
-    body = <EmptyState title="No fills yet" description="This trader has no recorded trades." />;
+    body = <EmptyState title={emptyTitle} description={emptyDescription} />;
   } else {
     body = (
       <ol aria-label="Recent orders" data-testid="fills-list">
@@ -55,8 +63,8 @@ export function RecentFills({
 
   return (
     <Panel
-      title="Recent fills"
-      titleId="fills-title"
+      title={title}
+      titleId={titleId}
       titleOnMobile
       focusableBody
       meta={status === "success" && items.length > 0 ? `Last ${items.length} orders` : null}

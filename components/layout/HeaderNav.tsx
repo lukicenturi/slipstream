@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
 /**
  * The desktop nav links (from `lg` up). It reads the URL, so the parent
  * must wrap it in <Suspense fallback={<HeaderNavLinks active={null} />}>.
- * On desktop the home page shows both panels, so `/` and `/?view=live`
- * both mark "Leaderboard".
+ * `/` marks "Leaderboard" (both panels); `/?view=live` marks "Live"
+ * (the full-width feed).
  */
 export function HeaderNav() {
-  const active = useActiveNavKey(true);
+  const active = useActiveNavKey();
   return <HeaderNavLinks active={active} />;
 }
 

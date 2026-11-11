@@ -174,6 +174,17 @@ No server push: the app has no database. Alerts fire only while a Slipstream tab
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` (flag unset and `testnet`) pass, and the headless browser checks at 375 px (pill text, links with carry-over, footer, one-line header) pass in both modes.
 
+## Phase 4f: desktop live view and account
+
+- [x] `lib/nav.ts`: `/?view=live` marks `Live` at every width; `Account` (`/account`) is the fourth nav item (tested)
+- [x] Desktop `/?view=live`: the feed spans the full width as a dense table (Time, Trader, Action, Asset, Size @ Price, Notional, Closed PnL, actions); the leaderboard is hidden but stays mounted; `/` keeps the split
+- [x] `MidsSourceProvider`: `useMid` and the live PnL read the nearest mids store (mainnet by default); testnet prices come from REST polling, not a second socket
+- [x] `/account`: the connected wallet's testnet balance, positions and fills (testnet build, lazy chunk, reads only), and a saved "My address" mainnet profile in both builds (`slipstream.myAddress`, tested)
+- [x] Wallet popover: "USDC available", "Account value" and a "My account" link
+- [x] Four bottom tabs fit at 375 px; README, DECISIONS and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` (flag unset and `testnet`) pass, and the headless browser checks at 1280 px and 375 px (live table, kept feed items, account page, saved address, testnet account with a fake wallet, no exchange request) pass in both modes.
+
 ## Phase 5 (bonus): Expo app (4–6 h)
 
 Only if Phases 1–4 are solid.

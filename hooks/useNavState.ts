@@ -11,14 +11,14 @@ import { activeNavKey, parseHomeView, type HomeView, type NavKey } from "@/lib/n
  * or the prerender of routes such as /trader/[address] fails.
  */
 
-/** The active nav item. Pass `isDesktop` from the component's own breakpoint. */
-export function useActiveNavKey(isDesktop: boolean): NavKey | null {
+/** The active nav item. It is the same at every width. */
+export function useActiveNavKey(): NavKey | null {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  return activeNavKey(pathname, searchParams.get("view"), isDesktop);
+  return activeNavKey(pathname, searchParams.get("view"));
 }
 
-/** The mobile view of the home page, from `?view=`. */
+/** The view of the home page, from `?view=`. */
 export function useHomeView(): HomeView {
   const searchParams = useSearchParams();
   return parseHomeView(searchParams.get("view"));
