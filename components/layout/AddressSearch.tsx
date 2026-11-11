@@ -10,8 +10,10 @@ import { NamesError, resolveName } from "@/lib/names/client";
 import { TRADING_ENABLED } from "@/lib/trading/config";
 import { cn } from "@/lib/utils";
 
-// The testnet build adds a wallet button to the header, so the input has about 120 px at 375 px.
-const NARROW_PLACEHOLDER = TRADING_ENABLED ? "Address or name" : "Address, .eth or .hl";
+// At 375 px the input has about 107 px of text room in the read-only build. The testnet
+// build adds a wallet button, so its text room is about 75 px: a short word must do there.
+// The label "Trader address or name" still names the input for screen readers.
+const NARROW_PLACEHOLDER = TRADING_ENABLED ? "Search" : "Address, .eth or .hl";
 
 function lookupMessage(error: unknown, name: string): string {
   if (error instanceof NamesError) {

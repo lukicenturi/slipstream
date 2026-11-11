@@ -8,6 +8,7 @@ import { TRADING_ENABLED } from "@/lib/trading/config";
 import { AddressSearch } from "./AddressSearch";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { HeaderNav, HeaderNavLinks } from "./HeaderNav";
+import { NetworkSwitch } from "./NetworkSwitch";
 
 export function Header() {
   return (
@@ -16,12 +17,15 @@ export function Header() {
         <Link href="/" className="shrink-0 text-base font-semibold tracking-wide text-foreground">
           Slipstream
         </Link>
+        {/* The network switch sits next to the wordmark from sm up, and in the icon group below. */}
+        <NetworkSwitch className="hidden sm:inline-flex lg:-ml-3" />
         {/* The nav reads the URL, so it needs a Suspense boundary (cacheComponents). */}
         <Suspense fallback={<HeaderNavLinks active={null} />}>
           <HeaderNav />
         </Suspense>
         <AddressSearch className="min-w-0 flex-1 lg:max-w-sm" />
         <ConnectionStatus className="ml-auto shrink-0" compactOnMobile />
+        <NetworkSwitch className="inline-flex sm:hidden" />
         <NotificationBell />
         {TRADING_ENABLED ? <LazyWalletButton /> : null}
       </div>

@@ -21,7 +21,8 @@ export function TestnetBadge({ className }: { className?: string }) {
 /**
  * The header wallet control of the testnet build. Below `sm` it is an icon
  * button, so the search keeps its room at 375 px; the popover shows the
- * address. From `sm` up it shows the short address and a Testnet badge.
+ * address. From `sm` up it shows the short address. The header's network
+ * switch already says "Testnet", so the Testnet badge shows only in the popover.
  */
 export default function WalletButton() {
   const connection = useConnection();
@@ -61,7 +62,6 @@ export default function WalletButton() {
         >
           <WalletIcon aria-hidden="true" className="text-brand sm:hidden" />
           <span className="hidden font-mono sm:inline">{short}</span>
-          <TestnetBadge className="hidden h-4 border-brand/60 px-1 text-[10px] leading-none text-brand sm:inline-flex" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-2">

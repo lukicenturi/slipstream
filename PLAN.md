@@ -164,6 +164,16 @@ No server push: the app has no database. Alerts fire only while a Slipstream tab
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` pass, and the headless browser checks at 1280 px and 375 px (active states, URL, mounted panels, nothing under the bar, sheet above the bar, keyboard) pass.
 
+## Phase 4e: deployments and network switch
+
+- [x] `lib/trading/config.ts`: `NETWORK`, `NETWORK_URLS` from `NEXT_PUBLIC_MAINNET_URL` / `NEXT_PUBLIC_TESTNET_URL` with defaults, `otherNetwork`, `networkSwitchTarget` (tested)
+- [x] Header pill (`MAINNET` muted / `TESTNET` amber, `MN` / `TN` below `sm`) that links to the other host and keeps the path; Suspense with a fallback
+- [x] Footer line with the switch link in both builds
+- [x] Header fits on one line at 375 px in both builds
+- [x] README (live links, GitHub, Deployments, environment), DECISIONS and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` (flag unset and `testnet`) pass, and the headless browser checks at 375 px (pill text, links with carry-over, footer, one-line header) pass in both modes.
+
 ## Phase 5 (bonus): Expo app (4–6 h)
 
 Only if Phases 1–4 are solid.
@@ -200,7 +210,7 @@ screenshots/                  design reference images (read-only)
 
 ## Note for the recruiter
 
-> **Slipstream** ([live link], [GitHub]): A read-only social trading feed for Hyperliquid perps, built over a weekend to explore Arbital's problem space. Solo project: I designed the architecture, the typed API layer, the real-time WebSocket feed and the mobile-first UI, using AI coding tools to move fast.
+> **Slipstream** ([live, read-only](https://slipstream-hl.vercel.app), [testnet with copy trading](https://slipstream-testnet.vercel.app), [GitHub](https://github.com/lukicenturi/slipstream)): A read-only social trading feed for Hyperliquid perps, with a separate testnet build for copy trading, built over a weekend to explore Arbital's problem space. Solo project: I designed the architecture, the typed API layer, the real-time WebSocket feed and the mobile-first UI, using AI coding tools to move fast.
 
 ## References
 
