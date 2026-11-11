@@ -4,19 +4,19 @@ import { describeFillAction, isSystemFill, sideLabel } from "./fillAction";
 
 describe("describeFillAction", () => {
   it.each([
-    ["Open Long", "opened long", "long"],
-    ["Open Short", "opened short", "short"],
-    ["Close Long", "closed long", "long"],
-    ["Close Short", "closed short", "short"],
-    ["Long > Short", "flipped to short", "short"],
-    ["Short > Long", "flipped to long", "long"],
-    ["Buy", "bought", null],
-    ["Sell", "sold", null],
-    ["Liquidated Isolated Long", "was liquidated", "long"],
-    ["Liquidated Cross Short", "was liquidated", "short"],
-    ["Auto-Deleveraging", "auto-deleveraging", null],
-  ])("maps %s", (dir, phrase, positionSide) => {
-    expect(describeFillAction(dir)).toEqual({ phrase, positionSide });
+    ["Open Long", "opened long", "opened", "long"],
+    ["Open Short", "opened short", "opened", "short"],
+    ["Close Long", "closed long", "closed", "long"],
+    ["Close Short", "closed short", "closed", "short"],
+    ["Long > Short", "flipped to short", "flipped", "short"],
+    ["Short > Long", "flipped to long", "flipped", "long"],
+    ["Buy", "bought", "bought", null],
+    ["Sell", "sold", "sold", null],
+    ["Liquidated Isolated Long", "was liquidated", "liquidated", "long"],
+    ["Liquidated Cross Short", "was liquidated", "liquidated", "short"],
+    ["Auto-Deleveraging", "auto-deleveraging", "auto-deleveraging", null],
+  ])("maps %s", (dir, phrase, verb, positionSide) => {
+    expect(describeFillAction(dir)).toEqual({ phrase, verb, positionSide });
   });
 });
 

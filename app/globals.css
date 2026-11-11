@@ -22,7 +22,7 @@
   --ss-border-strong: #2e333b;
   --ss-text: #e6e8eb;
   --ss-text-muted: #8b919a;
-  --ss-text-faint: #5c636d;
+  --ss-text-faint: #7a818b; /* 5.0:1 on the background, 4.7:1 on the surface (WCAG AA) */
   --ss-accent: #f2b544;
   --ss-on-accent: #0a0b0d;
   --ss-accent-dim: rgba(242, 181, 68, 0.12);

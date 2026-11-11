@@ -54,7 +54,7 @@ export function AddressSearch({ className }: { className?: string }) {
         spellCheck={false}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className="h-8 w-full min-w-0 rounded-md border border-border bg-surface pr-3 pl-8 font-mono text-xs text-foreground transition-colors outline-none placeholder:font-sans placeholder:text-faint hover:border-border-strong focus-visible:border-ring aria-invalid:border-short"
+        className="h-8 w-full min-w-0 rounded-md border border-border bg-surface pr-3 pl-8 font-mono text-xs text-foreground transition-colors placeholder:font-sans placeholder:text-faint hover:border-border-strong focus-visible:border-ring focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-short"
       />
       {error ? (
         <p

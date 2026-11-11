@@ -31,7 +31,14 @@ export function WindowTabs({
     >
       <TabsList aria-label="Time window">
         {TIME_WINDOWS.map((option) => (
-          <TabsTrigger key={option} value={option} className="px-2 text-2xs sm:px-2.5 sm:text-xs">
+          <TabsTrigger
+            key={option}
+            value={option}
+            // The tabs have no tab panels: they re-sort the table or redraw the chart.
+            // Radix points aria-controls at a panel id that does not exist, so remove it.
+            aria-controls={undefined}
+            className="px-2 text-2xs sm:px-2.5 sm:text-xs"
+          >
             {WINDOW_LABEL[option]}
           </TabsTrigger>
         ))}

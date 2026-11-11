@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
  * A bordered panel with a 40 px header row. The body scrolls on desktop.
  * By default the title is visually hidden below `lg`, because the home
  * page shows the same words in its tab bar. Set `titleOnMobile` to show it.
+ * Set `focusableBody` when the body can scroll but holds no focusable
+ * element, so keyboard users can still scroll it.
  */
 export function Panel({
   title,
@@ -15,6 +17,7 @@ export function Panel({
   children,
   className,
   titleOnMobile = false,
+  focusableBody = false,
 }: {
   title: string;
   titleId: string;
@@ -23,6 +26,7 @@ export function Panel({
   children: ReactNode;
   className?: string;
   titleOnMobile?: boolean;
+  focusableBody?: boolean;
 }) {
   return (
     <section
@@ -45,7 +49,12 @@ export function Panel({
         {meta ? <div className="min-w-0 truncate text-2xs text-faint">{meta}</div> : null}
         {actions ? <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div> : null}
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+      <div
+        className="min-h-0 flex-1 overflow-y-auto focus-visible:-outline-offset-1"
+        tabIndex={focusableBody ? 0 : undefined}
+      >
+        {children}
+      </div>
     </section>
   );
 }

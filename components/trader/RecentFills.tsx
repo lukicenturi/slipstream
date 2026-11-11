@@ -58,6 +58,7 @@ export function RecentFills({
       title="Recent fills"
       titleId="fills-title"
       titleOnMobile
+      focusableBody
       meta={status === "success" && items.length > 0 ? `Last ${items.length} orders` : null}
       className={className}
     >

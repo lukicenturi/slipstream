@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
+import { CopyTradeProvider } from "@/components/copy-trade/CopyTradeProvider";
 import { MidsFeeder } from "@/components/providers/MidsFeeder";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +22,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <MidsFeeder />
-        {children}
+        <CopyTradeProvider>{children}</CopyTradeProvider>
         <Toaster position="bottom-center" />
       </TooltipProvider>
     </QueryClientProvider>

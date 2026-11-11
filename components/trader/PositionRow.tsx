@@ -2,10 +2,10 @@
 
 import { memo } from "react";
 
+import { CopyTradeButton } from "@/components/copy-trade/CopyTradeButton";
 import { Price } from "@/components/shared/Price";
 import { Side } from "@/components/shared/Side";
 import { signTone } from "@/components/shared/tone";
-import { Button } from "@/components/ui/button";
 import { useMid } from "@/hooks/useMid";
 import { returnOnEquity, unrealizedPnl } from "@/lib/calc/positions";
 import { EMPTY_VALUE, formatPercent, formatPrice, formatSize, formatUsd } from "@/lib/format";
@@ -25,7 +25,8 @@ export const PositionRow = memo(function PositionRow({ position }: { position: P
   const roe = returnOnEquity(position, pnl, mid);
   const absSize = Math.abs(position.size);
   // The mark at the time of the API response, until the first mid arrives.
-  const mark = mid ?? (absSize > 0 ? position.positionValue / absSize : undefined);
+  const apiMark = absSize > 0 ? position.positionValue / absSize : undefined;
+  const mark = mid ?? apiMark;
 
   return (
     <tr
@@ -66,15 +67,13 @@ export const PositionRow = memo(function PositionRow({ position }: { position: P
         )}
       </td>
       <td className="px-3 text-right">
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          disabled
-          title="Copy trade is not available yet"
-        >
-          Copy
-        </Button>
+        <CopyTradeButton
+          coin={position.coin}
+          side={position.side}
+          fallbackMarkPx={apiMark}
+          maxLeverage={position.maxLeverage}
+          leverage={position.leverage}
+        />
       </td>
     </tr>
   );
