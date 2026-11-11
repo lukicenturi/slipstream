@@ -25,7 +25,9 @@ import {
 } from "@/lib/trading/exchange";
 import {
   assertWithinCap,
+  buildCloseOrder,
   buildIocOrder,
+  CloseTooSmallError,
   leverageUpdate,
   OrderTooLargeError,
   OrderTooSmallError,
@@ -144,4 +146,57 @@ export function usePlaceOrder(owner: string | undefined, agent: StoredAgent | nu
   });
 
   return { ...mutation, phase };
+}
+
+export interface ClosePositionInput {
+  asset: PerpAsset;
+  /** The open position to close (main exchange only). */
+  position: Position;
+  /** The share to close, in (0, 1]. */
+  fraction: number;
+}
+
+/**
+ * Close all or part of an open position with one reduce-only IOC order,
+ * signed by the agent. The mid is read again right before the order. A
+ * close only shrinks risk, so the per-order cap does not apply to it (the
+ * cap limits new exposure). The review step in the sheet still comes first.
+ */
+export function useClosePosition(owner: string | undefined, agent: StoredAgent | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<OrderResult, TradingError, ClosePositionInput>({
+    mutationFn: async ({ asset, position, fraction }) => {
+      if (!owner || !agent) throw new TradingError("api", "Approve the agent first.");
+      try {
+        const client = createAgentClient(agent.privateKey);
+        // A fresh REST read right before the order, on the build's network.
+        const mids = await getAllMidsOnce(HL.infoUrl);
+        const mid = mids[asset.name];
+        if (mid === undefined) {
+          throw new TradingError("api", `No ${NETWORK} price for ${asset.name}.`);
+        }
+        const order = buildCloseOrder({
+          assetIndex: asset.index,
+          szDecimals: asset.szDecimals,
+          positionSide: position.side,
+          positionSize: Math.abs(position.size),
+          fraction,
+          mid,
+          slippage: TRADING_LIMITS[NETWORK].slippage,
+        });
+        return await placeIocOrder(client, order, agent.address);
+      } catch (error) {
+        if (error instanceof CloseTooSmallError) throw new TradingError("api", error.message);
+        throw toTradingError(error, { agentAddress: agent.address, network: NETWORK });
+      }
+    },
+    onError: (error) => {
+      if (error.kind === "agent" && owner) forgetAgent(owner);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: traderStateKey(owner) });
+      void queryClient.invalidateQueries({ queryKey: traderFillsKey(owner) });
+    },
+  });
 }

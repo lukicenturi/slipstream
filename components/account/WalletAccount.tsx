@@ -298,7 +298,8 @@ function ConnectedAccount({ address }: { address: string }) {
         onRetry={() => void account.refetch()}
         title={COPY.positionsTitle}
         titleId="wallet-positions-title"
-        showCopy={false}
+        action={TRADING_ENABLED ? "close" : "none"}
+        owner={address}
         emptyTitle={COPY.positionsEmptyTitle}
         emptyDescription={COPY.positionsEmptyDescription}
       />

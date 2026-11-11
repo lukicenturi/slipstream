@@ -4,7 +4,11 @@ import type { PerpAsset } from "@/lib/hyperliquid/schemas";
 
 import {
   assertWithinCap,
+  buildCloseOrder,
   buildIocOrder,
+  closeFraction,
+  closePreview,
+  CloseTooSmallError,
   clampLeverage,
   findAsset,
   leverageUpdate,
@@ -306,5 +310,111 @@ describe("leverageUpdate", () => {
         position: { leverage: 5, leverageType: "isolated" },
       }),
     ).toEqual({ isCross: false });
+  });
+});
+
+describe("closeFraction", () => {
+  it("turns a whole percent into a share and clamps it", () => {
+    expect(closeFraction(100)).toBe(1);
+    expect(closeFraction(25)).toBe(0.25);
+    expect(closeFraction(0)).toBe(0.01);
+    expect(closeFraction(140)).toBe(1);
+    expect(closeFraction(Number.NaN)).toBe(1);
+  });
+});
+
+describe("buildCloseOrder", () => {
+  const btc = { assetIndex: 0, szDecimals: 5, mid: 100_000 };
+
+  it("closes a long with a reduce-only sell below the mid", () => {
+    const order = buildCloseOrder({ ...btc, positionSide: "long", positionSize: 0.5, fraction: 1 });
+    expect(order).toEqual({
+      a: 0,
+      b: false,
+      p: "99000",
+      s: "0.5",
+      r: true,
+      t: { limit: { tif: "Ioc" } },
+    });
+  });
+
+  it("closes a short with a reduce-only buy above the mid", () => {
+    const order = buildCloseOrder({
+      ...btc,
+      positionSide: "short",
+      positionSize: 0.5,
+      fraction: 1,
+    });
+    expect(order.b).toBe(true);
+    expect(order.p).toBe("101000");
+    expect(order.r).toBe(true);
+  });
+
+  it("closes a share of the position, rounded down to the size decimals", () => {
+    const order = buildCloseOrder({
+      assetIndex: 3,
+      szDecimals: 2,
+      mid: 150,
+      positionSide: "long",
+      positionSize: 10.37,
+      fraction: 0.5,
+    });
+    expect(order.s).toBe("5.18");
+  });
+
+  it("rejects a partial close below $10 but allows a small full close", () => {
+    const small = { ...btc, positionSide: "long" as const, positionSize: 0.00015 };
+    expect(() => buildCloseOrder({ ...small, fraction: 0.5 })).toThrow(CloseTooSmallError);
+    expect(buildCloseOrder({ ...small, fraction: 1 }).s).toBe("0.00015");
+  });
+
+  it("rejects a size that rounds to 0 and a missing mid", () => {
+    expect(() =>
+      buildCloseOrder({ ...btc, positionSide: "long", positionSize: 0.000001, fraction: 1 }),
+    ).toThrow(CloseTooSmallError);
+    expect(() =>
+      buildCloseOrder({ ...btc, mid: 0, positionSide: "long", positionSize: 1, fraction: 1 }),
+    ).toThrow();
+  });
+});
+
+describe("closePreview", () => {
+  it("shows the size, the worst price and the PnL that the close realises", () => {
+    const preview = closePreview({
+      assetIndex: 0,
+      szDecimals: 5,
+      mid: 110,
+      entryPx: 100,
+      positionSide: "long",
+      positionSize: 2,
+      fraction: 0.5,
+    });
+    expect(preview).toEqual({ sizeCoin: 1, sizeUsd: 110, worstPrice: 108.9, estPnl: 10 });
+  });
+
+  it("gives a short a gain when the price falls", () => {
+    const preview = closePreview({
+      assetIndex: 0,
+      szDecimals: 2,
+      mid: 90,
+      entryPx: 100,
+      positionSide: "short",
+      positionSize: 3,
+      fraction: 1,
+    });
+    expect(preview?.estPnl).toBe(30);
+    expect(preview?.worstPrice).toBe(90.9);
+  });
+
+  it("still previews a partial close below the minimum, and returns null without a mid", () => {
+    const base = {
+      assetIndex: 0,
+      szDecimals: 5,
+      entryPx: 100_000,
+      positionSide: "long" as const,
+      positionSize: 0.00015,
+    };
+    expect(closePreview({ ...base, mid: 100_000, fraction: 0.5 })?.sizeCoin).toBeCloseTo(0.000075);
+    expect(closePreview({ ...base, mid: 0, fraction: 1 })).toBeNull();
   });
 });

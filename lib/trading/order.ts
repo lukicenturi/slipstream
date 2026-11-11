@@ -64,13 +64,17 @@ export function clampLeverage(wanted: number, maxLeverage: number): number {
   return Math.min(max, Math.max(1, Math.round(wanted)));
 }
 
-/** The order wire shape that the SDK sends (`a` asset, `b` buy, `p` price, `s` size). */
+/**
+ * The order wire shape that the SDK sends (`a` asset, `b` buy, `p` price,
+ * `s` size, `r` reduce-only). Opening orders send `r: false`; a close sends
+ * `r: true`, so it can only shrink the position.
+ */
 export interface IocOrder {
   a: number;
   b: boolean;
   p: string;
   s: string;
-  r: false;
+  r: boolean;
   t: { limit: { tif: "Ioc" } };
 }
 
@@ -126,6 +130,135 @@ export function buildIocOrder(input: IocOrderInput): IocOrder {
     s: size,
     r: false,
     t: { limit: { tif: "Ioc" } },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Close a position
+// ---------------------------------------------------------------------------
+
+/** The share of a position that a close sends, as a ratio in (0, 1]. */
+export const CLOSE_PERCENT_PRESETS = [25, 50, 75, 100] as const;
+
+/** A close that rounds to a size of 0, or a partial close below the $10 minimum. */
+export class CloseTooSmallError extends Error {
+  constructor() {
+    super(`This close is below the $${MIN_ORDER_USD} minimum. Close more, or close it all.`);
+    this.name = "CloseTooSmallError";
+  }
+}
+
+export interface CloseOrderInput {
+  assetIndex: number;
+  szDecimals: number;
+  /** The side of the open position. The close goes the other way. */
+  positionSide: PositionSide;
+  /** The absolute size of the open position, in coin. */
+  positionSize: number;
+  /** The share to close, in (0, 1]. 1 closes the whole position. */
+  fraction: number;
+  mid: number;
+  slippage?: number;
+}
+
+/** A share in (0, 1] from a whole percent; anything outside is clamped. */
+export function closeFraction(percent: number): number {
+  if (!Number.isFinite(percent)) return 1;
+  return Math.min(100, Math.max(1, Math.round(percent))) / 100;
+}
+
+/**
+ * The close order: reduce-only IOC, the opposite side of the position.
+ * Closing a long sells at mid * (1 - slippage); closing a short buys at
+ * mid * (1 + slippage). The size is |position| * fraction, rounded down to
+ * szDecimals. A full close sends the whole position size. A partial close
+ * below $10 at the mid throws CloseTooSmallError; a full close does not,
+ * because reduce-only lets the exchange close a small position.
+ */
+export function buildCloseOrder(input: CloseOrderInput): IocOrder {
+  const {
+    assetIndex,
+    szDecimals,
+    positionSide,
+    positionSize,
+    fraction,
+    mid,
+    slippage = DEFAULT_SLIPPAGE,
+  } = input;
+  if (!Number.isFinite(mid) || mid <= 0) throw new Error("The mid price is not known.");
+  if (!Number.isFinite(positionSize) || positionSize <= 0) throw new CloseTooSmallError();
+  const share = Math.min(1, Math.max(0, fraction));
+  if (!(share > 0)) throw new CloseTooSmallError();
+
+  let size: string;
+  try {
+    size = roundSize(Math.abs(positionSize) * share, szDecimals);
+  } catch {
+    // The SDK throws when the size rounds to 0.
+    throw new CloseTooSmallError();
+  }
+  if (share < 1 && Number(size) * mid < MIN_ORDER_USD) throw new CloseTooSmallError();
+
+  // The close is the opposite side: a long closes with a sell.
+  const closeSide: PositionSide = positionSide === "long" ? "short" : "long";
+  return {
+    a: assetIndex,
+    b: closeSide === "long",
+    p: limitPrice({ mid, side: closeSide, slippage, szDecimals }),
+    s: size,
+    r: true,
+    t: { limit: { tif: "Ioc" } },
+  };
+}
+
+export interface ClosePreview {
+  /** The size that the close sends, in coin. */
+  sizeCoin: number;
+  /** That size at the mid, in USD. */
+  sizeUsd: number;
+  /** The worst fill price (the IOC limit price). */
+  worstPrice: number;
+  /** The PnL that the close realises at the mid, before fees. */
+  estPnl: number;
+}
+
+/**
+ * What a close sends and realises, for the sheet and the review. Null when
+ * the close cannot be built (no mid, or a size that rounds to 0).
+ */
+export function closePreview(input: CloseOrderInput & { entryPx: number }): ClosePreview | null {
+  let order: IocOrder;
+  try {
+    order = buildCloseOrder(input);
+  } catch (error) {
+    if (!(error instanceof CloseTooSmallError)) return null;
+    // Still show the numbers for a partial close below the minimum.
+    const raw = Math.abs(input.positionSize) * Math.min(1, Math.max(0, input.fraction));
+    if (!(raw > 0) || !Number.isFinite(input.mid) || input.mid <= 0) return null;
+    const pnl = (input.mid - input.entryPx) * raw * (input.positionSide === "short" ? -1 : 1);
+    const closeSide: PositionSide = input.positionSide === "long" ? "short" : "long";
+    let worst: number;
+    try {
+      worst = Number(
+        limitPrice({
+          mid: input.mid,
+          side: closeSide,
+          slippage: input.slippage ?? DEFAULT_SLIPPAGE,
+          szDecimals: input.szDecimals,
+        }),
+      );
+    } catch {
+      return null;
+    }
+    return { sizeCoin: raw, sizeUsd: raw * input.mid, worstPrice: worst, estPnl: pnl };
+  }
+  const sizeCoin = Number(order.s);
+  const direction = input.positionSide === "short" ? -1 : 1;
+  return {
+    sizeCoin,
+    sizeUsd: sizeCoin * input.mid,
+    worstPrice: Number(order.p),
+    estPnl: (input.mid - input.entryPx) * sizeCoin * direction,
   };
 }
 

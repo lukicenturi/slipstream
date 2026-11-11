@@ -519,3 +519,16 @@ The plan is `.claude/plans/current.md`. The changes are not committed and not de
   - Console: no errors. Both trading runs logged the known Next dev warning "rendering with server caches disabled", which comes from the Playwright route mocks (see "Name resolution").
   - All three dev servers were stopped afterwards. The other project's server on port 3000 was not touched.
 - The CLAUDE.md workflow asks for `/ship-simple`. This change ran as the implementer step of that workflow, so it did not start the command again.
+
+## 2026-11-12
+
+### Sheet header and close positions
+
+- **Sheet layout.** The bottom sheet box no longer scrolls. It is a column with a fixed 52 px header, a body that scrolls, and a footer that keeps its size (`SHEET_CONTENT_CLASS`, `SHEET_BODY_CLASS`, `SHEET_FOOTER_CLASS` in `components/copy-trade/CopyTradeFields.tsx`). Before, the box was the scroll container: on a short screen the header shrank and the absolutely placed close button fell below the header line, and it also scrolled away. The close button now lives in the header row (`SheetBar`), and SheetContent gets `showCloseButton={false}`. Checked at 375x560, 375x812 and 1280x500 in the testnet and the read-only builds.
+- **Close a position.** Own positions get a Close button: on `/account`, and on the profile of the connected wallet's address. The sheet sends one reduce-only IOC order (`r: true`) on the opposite side, 1 % through a fresh mid, after a review step. No leverage update is sent before a close.
+- **The per-order cap does not apply to a close.** The cap is a safeguard against new exposure. A reduce-only order can only shrink a position, and blocking an exit above the cap would add risk. The review step still comes first. If you want the cap on closes too, it is one line in `useClosePosition`.
+- **Minimum.** A partial close below $10 is blocked in the sheet. A full close is allowed below $10, because reduce-only orders may close a small position. If the exchange refuses it, the sheet shows the exchange text.
+- **Builder exchanges.** Their positions show a disabled Close button. Orders go to the main exchange only.
+- **Shared parts.** The primary button, risk panel, agent block and the error and result notices moved to `components/trading/TradingParts.tsx`, so the copy and close sheets share them. The close form loads in its own chunk through a dynamic import, so the wallet guard stays green.
+- **Workflow.** The user asked to skip `/ship-simple` for this change.
+- **Verified** in headless Chromium against the testnet exchange with a throwaway wallet, a mocked 0.01 BTC long and a stand-in agent: the 50 % close sent `{"b":false,"s":"0.005","r":true,"t":{"limit":{"tif":"Ioc"}}}` to `api.hyperliquid-testnet.xyz/exchange` only, and the sheet showed the exchange's answer for an unapproved agent ("User or API Wallet … does not exist."). A real fill is not verified.

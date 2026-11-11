@@ -6,14 +6,15 @@ import { Panel } from "@/components/shared/Panel";
 import { EmptyState, ErrorState, SkeletonRows } from "@/components/shared/States";
 import type { Position } from "@/lib/hyperliquid/schemas";
 
-import { PositionRow } from "./PositionRow";
+import { PositionRow, type PositionAction } from "./PositionRow";
 import type { QueryStatus } from "./TraderHeader";
 
 /**
  * Open positions, largest first. The table scrolls sideways on narrow
  * screens; the Asset column stays in place. The mark price is the live mid
  * from the shared socket. The account page passes its own title, id and
- * empty texts, and hides the Copy buttons. Positions of builder exchanges
+ * empty texts. Rows end with a Copy button on other traders and a Close
+ * button on your own positions in a trading build. Positions of builder exchanges
  * carry a badge with the exchange name.
  */
 export function PositionsTable({
@@ -23,7 +24,8 @@ export function PositionsTable({
   className,
   title = "Positions",
   titleId = "positions-title",
-  showCopy = true,
+  action = "copy",
+  owner,
   emptyTitle = "No open positions",
   emptyDescription = "This trader holds no perps now.",
 }: {
@@ -34,7 +36,10 @@ export function PositionsTable({
   className?: string;
   title?: string;
   titleId?: string;
-  showCopy?: boolean;
+  /** "copy" on other traders, "close" on your own positions in a trading build, "none" to hide. */
+  action?: PositionAction;
+  /** The lower-case address that holds the positions (for "close"). */
+  owner?: string;
   emptyTitle?: string;
   emptyDescription?: string;
 }) {
@@ -98,7 +103,7 @@ export function PositionsTable({
                   {label}
                 </th>
               ))}
-              {showCopy ? (
+              {action !== "none" ? (
                 <th scope="col" className="px-3 text-right font-normal">
                   <span className="sr-only">Actions</span>
                 </th>
@@ -111,7 +116,8 @@ export function PositionsTable({
                 key={position.coin}
                 position={position}
                 dex={position.dex ?? null}
-                showCopy={showCopy}
+                action={action}
+                owner={owner}
               />
             ))}
           </tbody>

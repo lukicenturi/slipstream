@@ -4,11 +4,13 @@ import { useMemo } from "react";
 
 import { BalancesPanel } from "@/components/account/BalancesPanel";
 import { useAccountBalances } from "@/hooks/useAccountBalances";
+import { useConnectedAddress } from "@/hooks/useConnectedAddress";
 import { useTrader } from "@/hooks/useTrader";
 import { collectPositions } from "@/lib/calc/balances";
 import { isSystemFill } from "@/lib/calc/fillAction";
 import { hasNoActivity } from "@/lib/calc/positions";
 import { winRate } from "@/lib/calc/winRate";
+import { TRADING_ENABLED } from "@/lib/trading/config";
 
 import { PnlChart } from "./PnlChart";
 import { PositionsTable } from "./PositionsTable";
@@ -22,6 +24,9 @@ import { TraderHeader } from "./TraderHeader";
  */
 export function TraderProfile({ address }: { address: string }) {
   const { state, fills, portfolio } = useTrader(address);
+  // Your own profile in a trading build: rows offer Close instead of Copy.
+  const connected = useConnectedAddress();
+  const isOwn = TRADING_ENABLED && connected === address;
   const balances = useAccountBalances(address);
   const rate = useMemo(() => (fills.data ? winRate(fills.data) : undefined), [fills.data]);
   const positions = useMemo(
@@ -67,6 +72,8 @@ export function TraderProfile({ address }: { address: string }) {
             status={state.status}
             onRetry={() => void state.refetch()}
             className="lg:order-2"
+            action={isOwn ? "close" : "copy"}
+            owner={address}
           />
           <BalancesPanel balances={balances} className="lg:order-3" />
           {/* Mobile: positions come first. Desktop: the chart row sits above them. */}

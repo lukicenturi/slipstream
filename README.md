@@ -310,6 +310,15 @@ The sheet shows a **MAINNET** or **TESTNET** badge and three steps:
 2. **Agent.** On mainnet, read the risk panel first, tick "I understand" and press "Continue". Then press "Approve agent" and sign once. The browser generates an agent key (a Hyperliquid API wallet). Your signature approves it for 24 h on mainnet or 7 days on testnet.
 3. **Order.** Pick side, size and leverage. The sheet uses the live mid, your balance and the max leverage of the asset on the network. Press "Review order": the review card shows the network, the order, the size in coin and USD, the leverage, the worst fill price, the estimated margin and the estimated liquidation price. "Place mainnet order" or "Place testnet order" sets the leverage when needed and sends an IOC limit order 1 % through the mid. It is the only button that sends an order.
 
+### Close a position
+
+Your own positions end with a **Close** button instead of Copy: on `/account`, and on your own profile (`/trader/<your address>`) while that wallet is connected. The close sheet shows the live position (size, entry, mid, unrealized PnL) and a share to close: 25 %, 50 %, 75 %, All, or any value on the slider. "Review close" shows the network, the reduce-only order, the size, the worst fill price and the estimated realized PnL. "Close 50% on mainnet" (or "Close all on testnet") sends one **reduce-only** IOC order 1 % through the mid. Reduce-only means it can only shrink the position, never open or flip it.
+
+- A close needs the same wallet, risk and agent steps as an order.
+- The per-order size cap does not apply to a close: the cap limits new exposure, and a close only removes it.
+- A partial close must be at least $10. A full close of a smaller position is allowed.
+- Positions on builder perp exchanges show a disabled Close button; close them on Hyperliquid.
+
 ### Safeguards
 
 | Safeguard            | Mainnet                         | Testnet |
