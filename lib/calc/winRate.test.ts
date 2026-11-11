@@ -24,6 +24,14 @@ describe("winRate", () => {
     expect(result).toEqual({ wins: 2, losses: 1, closes: 3, rate: 2 / 3 });
   });
 
+  it("returns a rate of 0 when every close lost", () => {
+    const result = winRate([
+      makeFill({ oid: 1, tid: 1, closedPnl: -4 }),
+      makeFill({ oid: 2, tid: 2, closedPnl: -1 }),
+    ]);
+    expect(result).toEqual({ wins: 0, losses: 2, closes: 2, rate: 0 });
+  });
+
   it("counts the partial fills of one order once", () => {
     const result = winRate([
       makeFill({ oid: 9, tid: 1, closedPnl: 5 }),
