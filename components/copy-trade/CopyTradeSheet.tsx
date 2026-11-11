@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
-import { LazyTestnetCopyTradeForm } from "@/components/trading/lazy";
+import { LazyTradingCopyTradeForm } from "@/components/trading/lazy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ import {
   resolveMaxLeverage,
 } from "@/lib/calc/copyTrade";
 import type { PositionSide } from "@/lib/hyperliquid/schemas";
-import { TRADING_ENABLED } from "@/lib/trading/config";
+import { NETWORK, TRADING_ENABLED } from "@/lib/trading/config";
 
 import {
   AssetRow,
@@ -38,8 +38,9 @@ export const DEMO_TOAST = "Demo only. No order was sent.";
 /**
  * The copy-trade sheet. A bottom sheet on every screen size: full width on
  * mobile, 480 px wide and centred from `sm` up. The read-only build shows
- * the demo form: estimates only, and confirm sends nothing. A build with
- * NEXT_PUBLIC_TRADING_MODE=testnet shows the testnet form instead.
+ * the demo form: estimates only, and confirm sends nothing. A trading build
+ * (NEXT_PUBLIC_TRADING_MODE equals the network) shows the trading form of
+ * its network instead.
  */
 export function CopyTradeSheet({
   open,
@@ -60,13 +61,13 @@ export function CopyTradeSheet({
       <SheetContent
         side="bottom"
         data-testid="copy-trade-sheet"
-        data-mode={TRADING_ENABLED ? "testnet" : "demo"}
+        data-mode={TRADING_ENABLED ? NETWORK : "demo"}
         onCloseAutoFocus={onCloseAutoFocus}
         className="mx-auto max-h-[92dvh] w-full max-w-[480px] gap-0 overflow-y-auto pb-[env(safe-area-inset-bottom)]"
       >
         {prefill ? (
           TRADING_ENABLED ? (
-            <LazyTestnetCopyTradeForm key={session} prefill={prefill} open={open} />
+            <LazyTradingCopyTradeForm key={session} prefill={prefill} open={open} />
           ) : (
             <DemoCopyTradeForm key={session} prefill={prefill} onDone={close} />
           )

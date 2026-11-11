@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 import { useConnect, useConnectors, type Connector } from "wagmi";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { TRADING_ENABLED } from "@/lib/trading/config";
+import { NETWORK, TRADING_ENABLED } from "@/lib/trading/config";
 import { isUserRejection } from "@/lib/trading/errors";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ function connectErrorText(error: Error): string {
 
 /**
  * The wallets that the user can connect. Used in the header, the account
- * page and the testnet sheet. Connecting only reads the address; it never
+ * page and the trading sheet. Connecting only reads the address; it never
  * asks for a signature.
  */
 export function ConnectorList({ onConnected }: { onConnected?: () => void }) {
@@ -38,8 +38,8 @@ export function ConnectorList({ onConnected }: { onConnected?: () => void }) {
     <div className="flex flex-col">
       <p className="px-2 pt-1 pb-1.5 text-2xs text-muted-foreground">
         {TRADING_ENABLED
-          ? "Connect a wallet. Slipstream trades on Hyperliquid testnet only."
-          : "Connect a wallet. Slipstream only reads your address on mainnet."}
+          ? `Connect a wallet. Slipstream trades on Hyperliquid ${NETWORK} with an agent key.`
+          : `Connect a wallet. Slipstream only reads your address on ${NETWORK}.`}
       </p>
       <ul aria-label="Wallets" className="flex flex-col">
         {sorted.map((connector) => {

@@ -1,7 +1,7 @@
 import { ApiRequestError } from "@nktkas/hyperliquid/api/exchange";
 import { describe, expect, it } from "vitest";
 
-import { isChainMismatch, MESSAGES, toTradingError, TradingError } from "./errors";
+import { isChainMismatch, MESSAGES, toTradingError, TradingError, tradingMessages } from "./errors";
 
 const OWNER = "0xf5082a22bddbb83d94c7c563f39cce60fee4c28e";
 const AGENT = "0xcd3b81c4aac35facf9eea7155c8f3b771420acdb";
@@ -19,6 +19,19 @@ describe("toTradingError", () => {
     const error = toTradingError(apiError(MUST_DEPOSIT));
     expect(error.kind).toBe("unfunded");
     expect(error.message).toBe(MESSAGES.unfunded);
+    expect(error.exchangeMessage).toBe(MUST_DEPOSIT);
+  });
+
+  it("names the network in the short messages and keeps the exchange text", () => {
+    const error = toTradingError(apiError(MUST_DEPOSIT), { network: "mainnet" });
+    expect(error.message).toBe("This wallet has no mainnet funds.");
+    expect(error.exchangeMessage).toBe(MUST_DEPOSIT);
+    const agent = toTradingError(apiError(AGENT_MISSING), {
+      agentAddress: AGENT,
+      network: "mainnet",
+    });
+    expect(agent.message).toBe(tradingMessages("mainnet").agent);
+    expect(agent.exchangeMessage).toBe(AGENT_MISSING);
   });
 
   it("maps a missing agent when the agent signed", () => {

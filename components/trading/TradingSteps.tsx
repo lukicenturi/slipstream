@@ -5,17 +5,13 @@ import { cn } from "@/lib/utils";
 const STEPS = ["Wallet", "Agent", "Order"] as const;
 
 /**
- * The 3 steps of a testnet copy trade. A done step shows a check icon, the
+ * The 3 steps of a copy trade in a trading build. A done step shows a check icon, the
  * current step has aria-current and an accent underline, and a later step
  * is faint. Colour is never the only signal.
  */
 export function TradingSteps({ current }: { current: 1 | 2 | 3 }) {
   return (
-    <ol
-      aria-label="Testnet trading steps"
-      data-testid="trading-steps"
-      className="grid grid-cols-3 gap-1"
-    >
+    <ol aria-label="Trading steps" data-testid="trading-steps" className="grid grid-cols-3 gap-1">
       {STEPS.map((label, index) => {
         const step = index + 1;
         const done = step < current;

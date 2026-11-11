@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest";
 import { ENDPOINTS } from "@/lib/network";
 
 import {
-  assertTestnetTrading,
+  assertTradingEnabled,
   DEFAULT_NETWORK_URLS,
   getTradingMode,
+  isTradingEnabled,
   NETWORK,
   NETWORK_URLS,
   networkHost,
@@ -14,44 +15,84 @@ import {
   parseNetworkUrl,
   parseTradingMode,
   sharedPath,
-  TESTNET,
+  TRADING,
+  TRADING_ENABLED,
+  TRADING_LIMITS,
   TradingDisabledError,
 } from "./config";
 
-describe("assertTestnetTrading", () => {
-  it.each([["off"], [undefined], ["mainnet"], ["TESTNET"], [""], [null], [1]])(
-    "throws for %j",
-    (mode) => {
-      expect(() => assertTestnetTrading(mode)).toThrow(TradingDisabledError);
-    },
-  );
+describe("assertTradingEnabled", () => {
+  it.each<[unknown, unknown]>([
+    ["off", "mainnet"],
+    ["off", "testnet"],
+    [undefined, "mainnet"],
+    ["mainnet", "testnet"],
+    ["testnet", "mainnet"],
+    ["TESTNET", "testnet"],
+    ["MAINNET", "mainnet"],
+    ["", "mainnet"],
+    [null, null],
+    ["off", "off"],
+    [1, "mainnet"],
+  ])("throws for mode %j on %j", (mode, network) => {
+    expect(() => assertTradingEnabled(mode, network)).toThrow(TradingDisabledError);
+  });
 
-  it("passes for testnet", () => {
-    expect(() => assertTestnetTrading("testnet")).not.toThrow();
+  it.each([["testnet"], ["mainnet"]])("passes when the mode is %s on the same network", (net) => {
+    expect(() => assertTradingEnabled(net, net)).not.toThrow();
+  });
+});
+
+describe("isTradingEnabled", () => {
+  it("is true only when the mode names the network", () => {
+    expect(isTradingEnabled("mainnet", "mainnet")).toBe(true);
+    expect(isTradingEnabled("testnet", "testnet")).toBe(true);
+    expect(isTradingEnabled("mainnet", "testnet")).toBe(false);
+    expect(isTradingEnabled("testnet", "mainnet")).toBe(false);
+    expect(isTradingEnabled("off", "mainnet")).toBe(false);
+    expect(isTradingEnabled("off", "testnet")).toBe(false);
   });
 });
 
 describe("parseTradingMode", () => {
-  it("accepts only the exact string testnet", () => {
+  it("accepts only the exact strings testnet and mainnet", () => {
     expect(parseTradingMode("testnet")).toBe("testnet");
+    expect(parseTradingMode("mainnet")).toBe("mainnet");
     expect(parseTradingMode("TESTNET")).toBe("off");
-    expect(parseTradingMode("mainnet")).toBe("off");
+    expect(parseTradingMode("Mainnet")).toBe("off");
     expect(parseTradingMode(" testnet")).toBe("off");
+    expect(parseTradingMode("on")).toBe("off");
     expect(parseTradingMode(undefined)).toBe("off");
   });
 
   it("is off in the test build, where the variable is unset", () => {
     expect(getTradingMode()).toBe("off");
+    expect(TRADING_ENABLED).toBe(false);
   });
 });
 
-describe("TESTNET", () => {
-  it("is the testnet endpoint table, on testnet hosts only", () => {
-    expect(TESTNET).toBe(ENDPOINTS.testnet);
-    for (const url of [TESTNET.infoUrl, TESTNET.wsUrl, TESTNET.appUrl, TESTNET.explorerUrl]) {
-      expect(new URL(url).host).toMatch(/hyperliquid-testnet\.xyz$/);
-    }
-    expect(TESTNET.faucetUrl).toBe("https://app.hyperliquid-testnet.xyz/drip");
+describe("TRADING", () => {
+  it("is the endpoint table of the build's network", () => {
+    expect(TRADING).toBe(ENDPOINTS[NETWORK]);
+    expect(ENDPOINTS.testnet.faucetUrl).toBe("https://app.hyperliquid-testnet.xyz/drip");
+    expect(ENDPOINTS.mainnet.faucetUrl).toBeNull();
+  });
+});
+
+describe("TRADING_LIMITS", () => {
+  it("has the planned safeguards per network", () => {
+    expect(TRADING_LIMITS.mainnet).toEqual({
+      defaultMaxOrderUsd: 500,
+      hardMaxOrderUsd: 50_000,
+      agentTtlMs: 24 * 60 * 60 * 1000,
+      slippage: 0.01,
+    });
+    expect(TRADING_LIMITS.testnet).toEqual({
+      defaultMaxOrderUsd: 10_000,
+      hardMaxOrderUsd: 50_000,
+      agentTtlMs: 7 * 24 * 60 * 60 * 1000,
+      slippage: 0.01,
+    });
   });
 });
 

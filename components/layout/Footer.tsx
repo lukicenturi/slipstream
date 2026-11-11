@@ -1,4 +1,10 @@
-import { NETWORK_URLS, networkHost, TRADING_ENABLED } from "@/lib/trading/config";
+import {
+  NETWORK,
+  NETWORK_URLS,
+  networkHost,
+  networkLabel,
+  TRADING_ENABLED,
+} from "@/lib/trading/config";
 
 import { NetworkSwitchLink } from "./NetworkSwitch";
 
@@ -15,14 +21,37 @@ export function Footer() {
           {TRADING_ENABLED ? (
             <>
               <p data-testid="footer-disclaimer">
-                Slipstream is an unofficial viewer for Hyperliquid public data. It places no mainnet
-                orders and gives no financial advice. Testnet trading is enabled in this build.
+                Slipstream is unofficial, unaudited software for Hyperliquid. Trading uses your own
+                funds at your own risk. It gives no financial advice.
+              </p>
+              <p data-testid="footer-trading">
+                Trading is enabled in this build on {networkLabel(NETWORK)}. Orders use{" "}
+                {NETWORK === "mainnet" ? "real" : "test"} funds.
+              </p>
+              {NETWORK === "testnet" ? (
+                <p data-testid="footer-network">
+                  This is the Hyperliquid testnet build. All data comes from testnet.{" "}
+                  <NetworkSwitchLink className={LINK_CLASS}>Switch to Mainnet</NetworkSwitchLink>.
+                </p>
+              ) : (
+                <p data-testid="footer-network">
+                  A testnet build with test funds is at{" "}
+                  <NetworkSwitchLink className={LINK_CLASS}>
+                    {networkHost(NETWORK_URLS.testnet)}
+                  </NetworkSwitchLink>
+                  .
+                </p>
+              )}
+            </>
+          ) : NETWORK === "testnet" ? (
+            <>
+              <p data-testid="footer-disclaimer">
+                Slipstream is an unofficial, read-only viewer for Hyperliquid public data. It places
+                no orders and gives no financial advice.
               </p>
               <p data-testid="footer-network">
-                This is the Hyperliquid testnet build. All data comes from testnet, and orders use
-                test funds only.{" "}
-                <NetworkSwitchLink className={LINK_CLASS}>Switch to Mainnet</NetworkSwitchLink> for
-                the read-only app.
+                This is the Hyperliquid testnet build. All data comes from testnet.{" "}
+                <NetworkSwitchLink className={LINK_CLASS}>Switch to Mainnet</NetworkSwitchLink>.
               </p>
             </>
           ) : (

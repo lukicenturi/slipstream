@@ -62,6 +62,8 @@ describe("parseNetwork", () => {
     ["mainnet", "testnet", "testnet"],
     ["testnet", "off", "testnet"],
     ["TESTNET", "Testnet", "mainnet"],
+    [undefined, "mainnet", "mainnet"],
+    ["testnet", "mainnet", "testnet"],
     [" testnet", undefined, "mainnet"],
   ])("NEXT_PUBLIC_NETWORK=%j, NEXT_PUBLIC_TRADING_MODE=%j gives %s", (network, mode, expected) => {
     expect(parseNetwork(network, mode)).toBe(expected);
@@ -97,16 +99,30 @@ describe("ENDPOINTS", () => {
   });
 });
 
-describe.each<[string, BuildEnv, Network]>([
-  ["no variable", {}, "mainnet"],
-  ["NEXT_PUBLIC_TRADING_MODE=testnet", { NEXT_PUBLIC_TRADING_MODE: "testnet" }, "testnet"],
-  ["NEXT_PUBLIC_NETWORK=testnet", { NEXT_PUBLIC_NETWORK: "testnet" }, "testnet"],
+describe.each<[string, BuildEnv, Network, boolean]>([
+  ["no variable", {}, "mainnet", false],
+  ["NEXT_PUBLIC_TRADING_MODE=testnet", { NEXT_PUBLIC_TRADING_MODE: "testnet" }, "testnet", true],
+  ["NEXT_PUBLIC_TRADING_MODE=mainnet", { NEXT_PUBLIC_TRADING_MODE: "mainnet" }, "mainnet", true],
+  ["NEXT_PUBLIC_NETWORK=testnet", { NEXT_PUBLIC_NETWORK: "testnet" }, "testnet", false],
+  [
+    "NEXT_PUBLIC_NETWORK=testnet, NEXT_PUBLIC_TRADING_MODE=testnet",
+    { NEXT_PUBLIC_NETWORK: "testnet", NEXT_PUBLIC_TRADING_MODE: "testnet" },
+    "testnet",
+    true,
+  ],
+  [
+    "NEXT_PUBLIC_NETWORK=testnet, NEXT_PUBLIC_TRADING_MODE=mainnet",
+    { NEXT_PUBLIC_NETWORK: "testnet", NEXT_PUBLIC_TRADING_MODE: "mainnet" },
+    "testnet",
+    false,
+  ],
   [
     "NEXT_PUBLIC_NETWORK=mainnet, trading off",
     { NEXT_PUBLIC_NETWORK: "mainnet", NEXT_PUBLIC_TRADING_MODE: "off" },
     "mainnet",
+    false,
   ],
-])("a build with %s", (_name, env, expected) => {
+])("a build with %s", (_name, env, expected, trades) => {
   it(`is a ${expected} build`, async () => {
     const { network, config } = await loadBuild(env);
     expect(network.NETWORK).toBe(expected);
@@ -114,10 +130,11 @@ describe.each<[string, BuildEnv, Network]>([
     expect(config.NETWORK).toBe(expected);
   });
 
-  it("trades exactly when the network is testnet", async () => {
+  it(`${trades ? "trades" : "does not trade"}: the mode must equal the network`, async () => {
     const { config } = await loadBuild(env);
-    expect(config.TRADING_ENABLED).toBe(expected === "testnet");
-    expect(config.getTradingMode()).toBe(expected === "testnet" ? "testnet" : "off");
+    expect(config.TRADING_ENABLED).toBe(trades);
+    expect(config.getTradingMode()).toBe(config.parseTradingMode(env.NEXT_PUBLIC_TRADING_MODE));
+    expect(config.TRADING).toEqual(ENDPOINTS[expected]);
   });
 
   it("exports the info, socket and leaderboard URLs of HL", async () => {

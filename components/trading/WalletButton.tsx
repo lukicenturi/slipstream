@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useConnection, useDisconnect } from "wagmi";
 
 import { Blockie } from "@/components/shared/Blockie";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,17 +16,10 @@ import {
 } from "@/hooks/useAccountBalances";
 import { ACCOUNT_REFRESH_MS, useTraderState } from "@/hooks/useTrader";
 import { EMPTY_VALUE, formatUsd, shortAddress } from "@/lib/format";
-import { TRADING_ENABLED } from "@/lib/trading/config";
+import { NETWORK, TRADING_ENABLED } from "@/lib/trading/config";
 
 import { ConnectWalletPopover } from "./ConnectWallet";
-
-export function TestnetBadge({ className }: { className?: string }) {
-  return (
-    <Badge variant="outline" className={className ?? "border-brand/60 text-brand"}>
-      Testnet
-    </Badge>
-  );
-}
+import { NetworkBadge } from "./NetworkBadge";
 
 /**
  * The header wallet control, in every build. Below `sm` it is an icon
@@ -35,10 +27,11 @@ export function TestnetBadge({ className }: { className?: string }) {
  * address. From `sm` up it shows the short address. The popover shows the
  * balance (loaded while it is open) and a link to the account page.
  *
- * Mainnet: read-only. It reads the address only; it requests no signature
- * and imports no exchange code (lib/wallet-guard.test.ts checks this).
- * Testnet: the header's network switch already says "Testnet", so the
- * Testnet badge shows only in the popover.
+ * It never signs and imports no exchange code (lib/wallet-guard.test.ts
+ * checks this). In a read-only build it reads the address only. In a
+ * trading build (mainnet or testnet) the popover shows the trading framing:
+ * the network badge and "USDC available". The header's network switch
+ * already names the network, so the badge shows only in the popover.
  */
 export default function WalletButton() {
   const connection = useConnection();
@@ -75,7 +68,9 @@ export default function WalletButton() {
           size="sm"
           data-testid="wallet-button"
           data-address={owner}
-          aria-label={TRADING_ENABLED ? `Wallet ${short} on testnet` : `Wallet ${short}, read-only`}
+          aria-label={
+            TRADING_ENABLED ? `Wallet ${short} on ${NETWORK}` : `Wallet ${short}, read-only`
+          }
           className="w-7 shrink-0 px-0 sm:w-auto sm:px-2"
         >
           <WalletIcon aria-hidden="true" className="text-brand sm:hidden" />
@@ -86,14 +81,14 @@ export default function WalletButton() {
       <PopoverContent className="w-64 p-2">
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-xs text-foreground">{short}</span>
-          {TRADING_ENABLED ? <TestnetBadge /> : null}
+          {TRADING_ENABLED ? <NetworkBadge network={NETWORK} /> : null}
         </div>
         <div className="mt-1 flex items-start gap-1.5">
           <Blockie address={address} />
           <p className="min-w-0 font-mono text-2xs break-all text-faint">{owner}</p>
         </div>
         {/* The content mounts only while the popover is open, so these queries run only then. */}
-        {TRADING_ENABLED ? <TestnetBalance owner={owner} /> : <ReadOnlyBalance owner={owner} />}
+        {TRADING_ENABLED ? <TradingBalance owner={owner} /> : <ReadOnlyBalance owner={owner} />}
         <Button asChild variant="outline" size="sm" className="mt-2 w-full">
           <Link href="/account" onClick={() => setOpen(false)} data-testid="wallet-account-link">
             My account
@@ -113,8 +108,8 @@ export default function WalletButton() {
   );
 }
 
-/** Testnet: the main perps USDC that orders can use, and its account value. */
-function TestnetBalance({ owner }: { owner: string }) {
+/** A trading build: the main perps USDC that orders can use, and its account value. */
+function TradingBalance({ owner }: { owner: string }) {
   // The profile's account query, so the popover, the sheet and /account share it.
   const account = useTraderState(owner, { refetchInterval: ACCOUNT_REFRESH_MS });
   return (
@@ -134,7 +129,7 @@ function TestnetBalance({ owner }: { owner: string }) {
 }
 
 /**
- * Mainnet: the account value over every perp exchange and spot, the same
+ * A read-only build: the account value over every perp exchange and spot, the same
  * total as the profile and /account (shared queries), and the read-only note.
  */
 function ReadOnlyBalance({ owner }: { owner: string }) {
@@ -147,7 +142,7 @@ function ReadOnlyBalance({ owner }: { owner: string }) {
         <BalanceLine label="Account value" value={summary.totalUsd} status={status} />
       </dl>
       <p data-testid="wallet-read-only-note" className="mt-2 text-2xs text-muted-foreground">
-        Read-only: Slipstream never asks for a signature on mainnet.
+        Read-only: Slipstream never asks for a signature on {NETWORK}.
       </p>
     </>
   );

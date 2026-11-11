@@ -3,11 +3,14 @@ import { describe, expect, it } from "vitest";
 import type { PerpAsset } from "@/lib/hyperliquid/schemas";
 
 import {
+  assertWithinCap,
   buildIocOrder,
   clampLeverage,
   findAsset,
   leverageUpdate,
+  limitPrice,
   orderBlockReason,
+  OrderTooLargeError,
   OrderTooSmallError,
   roundPrice,
   roundSize,
@@ -204,7 +207,15 @@ describe("summarizeOrderResponse", () => {
 });
 
 describe("orderBlockReason", () => {
-  const base = { asset: BTC, mid: 74000, balanceUsd: 500, sizeUsd: 1000, leverage: 5 };
+  const base = {
+    network: "testnet" as const,
+    asset: BTC,
+    mid: 74000,
+    balanceUsd: 500,
+    sizeUsd: 1000,
+    leverage: 5,
+    maxOrderUsd: 10_000,
+  };
 
   it("allows a funded order", () => {
     expect(orderBlockReason(base)).toBeNull();
@@ -224,6 +235,47 @@ describe("orderBlockReason", () => {
   it("blocks a margin above the balance and a size below $10", () => {
     expect(orderBlockReason({ ...base, leverage: 1 })).toMatch(/margin/);
     expect(orderBlockReason({ ...base, sizeUsd: 5 })).toMatch(/\$10/);
+  });
+
+  it("blocks a size above the cap", () => {
+    expect(orderBlockReason({ ...base, maxOrderUsd: 500 })).toBe(
+      "The size is above your cap of $500.",
+    );
+    expect(orderBlockReason({ ...base, sizeUsd: 500, maxOrderUsd: 500 })).toBeNull();
+  });
+
+  it("names the network", () => {
+    const mainnet = { ...base, network: "mainnet" as const };
+    expect(orderBlockReason({ ...mainnet, asset: null })).toBe("Not listed on mainnet.");
+    expect(orderBlockReason({ ...mainnet, balanceUsd: 0 })).toBe("No mainnet balance.");
+  });
+});
+
+describe("assertWithinCap", () => {
+  it("passes at or below the cap and throws above it", () => {
+    expect(() => assertWithinCap(500, 500)).not.toThrow();
+    expect(() => assertWithinCap(10, 500)).not.toThrow();
+    expect(() => assertWithinCap(500.01, 500)).toThrow(OrderTooLargeError);
+    expect(() => assertWithinCap(Number.NaN, 500)).toThrow("The order is above your cap of $500.");
+  });
+});
+
+describe("limitPrice", () => {
+  it("is the worst fill price, 1 % through the mid, rounded down", () => {
+    expect(limitPrice({ mid: 74000, side: "long", slippage: 0.01, szDecimals: 5 })).toBe("74740");
+    expect(limitPrice({ mid: 74000, side: "short", slippage: 0.01, szDecimals: 5 })).toBe("73260");
+  });
+
+  it("matches the price of the built order", () => {
+    const order = buildIocOrder({
+      assetIndex: 3,
+      szDecimals: 5,
+      side: "long",
+      sizeUsd: 500,
+      mid: 74123.4,
+      slippage: 0.01,
+    });
+    expect(order.p).toBe(limitPrice({ mid: 74123.4, side: "long", slippage: 0.01, szDecimals: 5 }));
   });
 });
 

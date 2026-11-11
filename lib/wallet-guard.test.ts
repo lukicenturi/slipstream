@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
  * The test checks the direct imports of each file, and it also follows the
  * static imports (`import ... from`, `export ... from`) through the app
  * source. A dynamic `import()` is a separate chunk that loads only when it
- * renders (the testnet sheet form), so the walk does not follow it. A
+ * renders (the trading sheet form), so the walk does not follow it. A
  * type-only import has no runtime code, so the walk skips it too.
  */
 
@@ -101,8 +101,8 @@ describe("wallet guard", () => {
     expect(sdk).toEqual([]);
   });
 
-  it("the walk finds the exchange from the testnet sheet form (self-check)", () => {
-    const { files } = reachable("components/trading/TestnetCopyTradeForm.tsx");
+  it("the walk finds the exchange from the trading sheet form (self-check)", () => {
+    const { files } = reachable("components/trading/TradingCopyTradeForm.tsx");
     expect(files.has("hooks/useTradingActions.ts")).toBe(true);
     expect(files.has("lib/trading/exchange.ts")).toBe(true);
   });

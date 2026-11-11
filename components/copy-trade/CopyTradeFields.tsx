@@ -21,7 +21,7 @@ import type { PositionSide } from "@/lib/hyperliquid/schemas";
 import { cn } from "@/lib/utils";
 
 /*
- * The parts that the demo sheet and the testnet sheet share: the header,
+ * The parts that the demo sheet and the trading sheet share: the header,
  * the asset and side row, the size and leverage fields, and the summary.
  * They are presentational. Each form owns its state.
  */
@@ -70,29 +70,49 @@ export function AssetRow({
   );
 }
 
-/** The USD size input and slider. The typed text stays a draft until it is valid. */
+/**
+ * The USD size input and slider. The typed text stays a draft until it is
+ * valid. The demo uses the default range; the trading sheet passes its own
+ * range (the $10 minimum up to the per-order cap) and a cap line as `children`.
+ */
 export function SizeField({
   id,
   value,
   onChange,
+  min = SIZE_MIN_USD,
+  max = SIZE_MAX_USD,
+  step = SIZE_STEP_USD,
+  children,
 }: {
   id: string;
   value: number;
   onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  /** Extra content under the range line (the trading sheet's cap). */
+  children?: ReactNode;
 }) {
   // The raw text while the user types; null shows the formatted size.
   const [draft, setDraft] = useState<string | null>(null);
+  const isDefaultRange = min === SIZE_MIN_USD && max === SIZE_MAX_USD;
+
+  function clamp(next: number): number {
+    if (isDefaultRange) return clampSizeUsd(next);
+    if (!Number.isFinite(next)) return max;
+    return Math.min(max, Math.max(min, next));
+  }
 
   function onText(text: string) {
     setDraft(text);
     const parsed = parseSizeInput(text);
-    if (parsed !== null && parsed >= SIZE_MIN_USD && parsed <= SIZE_MAX_USD) onChange(parsed);
+    if (parsed !== null && parsed >= min && parsed <= max) onChange(parsed);
   }
 
   function commit() {
     if (draft === null) return;
     const parsed = parseSizeInput(draft);
-    if (parsed !== null) onChange(clampSizeUsd(parsed));
+    if (parsed !== null) onChange(clamp(parsed));
     setDraft(null);
   }
 
@@ -127,9 +147,9 @@ export function SizeField({
       </div>
       <Slider
         className="mt-3"
-        min={SIZE_MIN_USD}
-        max={SIZE_MAX_USD}
-        step={SIZE_STEP_USD}
+        min={min}
+        max={max}
+        step={step}
         value={[value]}
         onValueChange={([next]) => {
           if (next === undefined) return;
@@ -143,10 +163,11 @@ export function SizeField({
         id={`${id}-size-range`}
         className="mt-2 flex justify-between font-mono text-2xs text-faint"
       >
-        <span>{formatSizeUsd(SIZE_MIN_USD)}</span>
+        <span>{formatSizeUsd(min)}</span>
         <span className="sr-only"> to </span>
-        <span>{formatSizeUsd(SIZE_MAX_USD)}</span>
+        <span data-testid="copy-size-max">{formatSizeUsd(max)}</span>
       </p>
+      {children}
     </div>
   );
 }

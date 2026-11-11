@@ -6,9 +6,9 @@ import { SkeletonRows } from "@/components/shared/States";
 
 /*
  * Wallet and trading components in their own chunks. The wallet button
- * shows in every build (read-only on mainnet). The testnet sheet form shows
- * only in the testnet build, so the mainnet build never downloads the
- * exchange SDK.
+ * shows in every build (read-only unless trading is on). The trading sheet
+ * form shows only in a trading build, so a read-only build never downloads
+ * the exchange SDK.
  */
 
 export const LazyWalletButton = dynamic(() => import("./WalletButton"), {
@@ -16,7 +16,7 @@ export const LazyWalletButton = dynamic(() => import("./WalletButton"), {
   loading: () => <span aria-hidden="true" className="block h-7 w-7 shrink-0 sm:w-32" />,
 });
 
-export const LazyTestnetCopyTradeForm = dynamic(() => import("./TestnetCopyTradeForm"), {
+export const LazyTradingCopyTradeForm = dynamic(() => import("./TradingCopyTradeForm"), {
   ssr: false,
-  loading: () => <SkeletonRows rows={8} label="Loading testnet trading" />,
+  loading: () => <SkeletonRows rows={8} label="Loading trading" />,
 });

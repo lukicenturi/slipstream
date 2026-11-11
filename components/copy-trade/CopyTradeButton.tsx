@@ -3,13 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { midsStore } from "@/lib/hyperliquid/mids";
 import type { PositionSide } from "@/lib/hyperliquid/schemas";
-import { TRADING_ENABLED } from "@/lib/trading/config";
+import { NETWORK, TRADING_ENABLED } from "@/lib/trading/config";
 import { cn } from "@/lib/utils";
 
 import { useCopyTrade, type CopyTradePrefill } from "./CopyTradeProvider";
 
 /**
- * Opens the copy-trade sheet (demo, or testnet in a testnet build) for one coin and side. It reads the mid
+ * Opens the copy-trade sheet (demo, or trading in a trading build) for one coin and side. It reads the mid
  * once, on press, so price ticks do not re-render the row.
  */
 export function CopyTradeButton({
@@ -48,7 +48,7 @@ export function CopyTradeButton({
       variant="outline"
       size="xs"
       onClick={onClick}
-      aria-label={`Copy ${sideWord} ${coin} ${TRADING_ENABLED ? "on testnet" : "(demo)"}`}
+      aria-label={`Copy ${sideWord} ${coin} ${TRADING_ENABLED ? `on ${NETWORK}` : "(demo)"}`}
       aria-haspopup="dialog"
       data-testid="copy-trade-button"
       className={cn("hover:border-brand/60 hover:text-brand", className)}

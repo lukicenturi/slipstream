@@ -34,43 +34,44 @@ import {
   NETWORK_URLS,
   networkLabel,
   otherNetwork,
-  TESTNET,
+  TRADING,
   TRADING_ENABLED,
 } from "@/lib/trading/config";
 
 const FILLS_REFRESH_MS = 30_000;
 
-/** The texts of each build. The testnet texts are the ones from before Phase 4j. */
-const COPY = TRADING_ENABLED
-  ? {
-      title: "My testnet account",
-      promptTitle: "Connect a wallet to see your testnet account",
-      promptDescription:
-        "Slipstream reads your testnet balance, positions and fills. It never asks for your wallet key.",
-      errorTitle: "The testnet account did not load",
-      errorDescription: "The Hyperliquid testnet info service did not answer.",
-      positionsTitle: "Testnet positions",
-      positionsEmptyTitle: "No open testnet positions",
-      positionsEmptyDescription: "This wallet holds no perps on testnet.",
-      balancesTitle: "Testnet balances",
-      fillsTitle: "Testnet fills",
-      fillsEmptyTitle: "No testnet fills yet",
-      fillsEmptyDescription: "Orders that you place on testnet show here.",
-    }
-  : {
-      title: "My wallet account",
-      promptTitle: "Connect a wallet to see your account",
-      promptDescription: "Slipstream only reads your address.",
-      errorTitle: "The account did not load",
-      errorDescription: "The Hyperliquid info service did not answer.",
-      positionsTitle: "Positions",
-      positionsEmptyTitle: "No open positions",
-      positionsEmptyDescription: "This wallet holds no perps on Hyperliquid.",
-      balancesTitle: "Balances",
-      fillsTitle: "Fills",
-      fillsEmptyTitle: "No fills yet",
-      fillsEmptyDescription: "This wallet has no fills on Hyperliquid.",
-    };
+/** The texts of each network. The testnet texts are the ones from before Phase 4j. */
+const COPY =
+  NETWORK === "testnet"
+    ? {
+        title: "My testnet account",
+        promptTitle: "Connect a wallet to see your testnet account",
+        promptDescription:
+          "Slipstream reads your testnet balance, positions and fills. It never asks for your wallet key.",
+        errorTitle: "The testnet account did not load",
+        errorDescription: "The Hyperliquid testnet info service did not answer.",
+        positionsTitle: "Testnet positions",
+        positionsEmptyTitle: "No open testnet positions",
+        positionsEmptyDescription: "This wallet holds no perps on testnet.",
+        balancesTitle: "Testnet balances",
+        fillsTitle: "Testnet fills",
+        fillsEmptyTitle: "No testnet fills yet",
+        fillsEmptyDescription: "Orders that you place on testnet show here.",
+      }
+    : {
+        title: "My wallet account",
+        promptTitle: "Connect a wallet to see your account",
+        promptDescription: "Slipstream only reads your address.",
+        errorTitle: "The account did not load",
+        errorDescription: "The Hyperliquid info service did not answer.",
+        positionsTitle: "Positions",
+        positionsEmptyTitle: "No open positions",
+        positionsEmptyDescription: "This wallet holds no perps on Hyperliquid.",
+        balancesTitle: "Balances",
+        fillsTitle: "Fills",
+        fillsEmptyTitle: "No fills yet",
+        fillsEmptyDescription: "This wallet has no fills on Hyperliquid.",
+      };
 
 const OTHER_NETWORK = otherNetwork(NETWORK);
 
@@ -79,8 +80,9 @@ const OTHER_NETWORK = otherNetwork(NETWORK);
  * loads lazily). It uses the same queries as the profile at
  * /trader/<address> and the prices of the shared socket, so both pages show
  * the same numbers, including builder perp exchanges and spot. It only
- * reads: the info endpoint, never the exchange. On mainnet it also hides
- * the trading notes (faucet, USDC transfer). lib/wallet-guard.test.ts checks
+ * reads: the info endpoint, never the exchange. A read-only build hides the
+ * trading notes (USDC transfer, faucet); a trading build shows them on both
+ * networks (the faucet only where one exists). lib/wallet-guard.test.ts checks
  * that it imports no exchange code.
  */
 export default function WalletAccount() {
@@ -150,11 +152,13 @@ function ConnectedAccount({ address }: { address: string }) {
   const perpsUsd = accounts.reduce((sum, entry) => sum + entry.accountValue, 0);
   const marginUsed = accounts.reduce((sum, entry) => sum + entry.marginUsed, 0);
   const hasSpot = (balances.spot.data ?? []).some((balance) => balance.total > 0);
-  // Orders use the main perps USDC only. Both notes are about trading, so mainnet hides them.
+  // Orders use the main perps USDC only. Both notes are about trading, so a read-only build hides them.
   const showTransferNote =
     TRADING_ENABLED && state !== undefined && state.withdrawable < 0.01 && builderUsdc !== null;
+  const faucetUrl = TRADING.faucetUrl;
   const showNoFunds =
     TRADING_ENABLED &&
+    faucetUrl !== null &&
     state !== undefined &&
     !isLoadingBalances(balances) &&
     perpsUsd < DUST_ACCOUNT_VALUE &&
@@ -228,7 +232,7 @@ function ConnectedAccount({ address }: { address: string }) {
       ) : (
         <dl data-testid="wallet-stats" className={STAT_GRID}>
           <AccountValueStat balances={balances} />
-          {/* Testnet frames this cell for orders ("USDC available"); mainnet only reads. */}
+          {/* A trading build frames this cell for orders ("USDC available"); a read-only build only reads. */}
           <Stat label={TRADING_ENABLED ? "USDC available" : "Withdrawable"} loading={pending}>
             {state ? (
               <>
@@ -270,14 +274,14 @@ function ConnectedAccount({ address }: { address: string }) {
         </p>
       ) : null}
 
-      {showNoFunds ? (
+      {showNoFunds && faucetUrl ? (
         <p
           data-testid="testnet-no-funds"
           className="rounded-lg border border-brand/40 bg-brand-dim px-3 py-2 text-xs text-foreground"
         >
           No testnet funds yet.{" "}
           <a
-            href={TESTNET.faucetUrl}
+            href={faucetUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-sm text-brand underline-offset-2 hover:underline"

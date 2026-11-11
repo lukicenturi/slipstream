@@ -1,13 +1,17 @@
 /*
  * Maps SDK, wallet and network failures to a small TradingError that the
- * sheet can show. The texts come from real testnet responses (see
- * DECISIONS.md, "Testnet trading").
+ * sheet can show. The texts come from real exchange responses (see
+ * DECISIONS.md, "Testnet trading" and "Mainnet trading at parity"). When the
+ * exchange sent a text, the error keeps it verbatim in `exchangeMessage`,
+ * so the sheet can show it next to the short message.
  */
+
+import type { Network } from "@/lib/network";
 
 export type TradingErrorKind =
   /** The user rejected the signature in the wallet. */
   | "rejected"
-  /** The account has no funds on testnet. */
+  /** The account has no funds on the network. */
   | "unfunded"
   /** The stored agent is not (or no longer) approved on the exchange. */
   | "agent"
@@ -20,21 +24,34 @@ export type TradingErrorKind =
 
 export class TradingError extends Error {
   readonly kind: TradingErrorKind;
+  /** The exact text that the exchange returned, when there is one. */
+  readonly exchangeMessage: string | undefined;
 
-  constructor(kind: TradingErrorKind, message: string, options?: { cause?: unknown }) {
+  constructor(
+    kind: TradingErrorKind,
+    message: string,
+    options?: { cause?: unknown; exchangeMessage?: string },
+  ) {
     super(message, { cause: options?.cause });
     this.name = "TradingError";
     this.kind = kind;
+    this.exchangeMessage = options?.exchangeMessage;
   }
 }
 
-export const MESSAGES = {
-  rejected: "Signature rejected.",
-  unfunded: "This wallet has no testnet funds.",
-  agent: "The agent is not approved on testnet. Approve it again.",
-  chain: "The wallet refused the signature network.",
-  network: "Could not reach the Hyperliquid testnet. Try again.",
-} as const;
+/** The short messages of a network. */
+export function tradingMessages(network: Network) {
+  return {
+    rejected: "Signature rejected.",
+    unfunded: `This wallet has no ${network} funds.`,
+    agent: `The agent is not approved on ${network}. Approve it again.`,
+    chain: "The wallet refused the signature network.",
+    network: `Could not reach the Hyperliquid ${network}. Try again.`,
+  } as const;
+}
+
+/** The testnet messages (kept for the tests and the testnet texts). */
+export const MESSAGES = tradingMessages("testnet");
 
 interface ErrorLike {
   name?: unknown;
@@ -91,31 +108,34 @@ export function isChainMismatch(error: unknown): boolean {
  * Turn any thrown value into a TradingError.
  * `agentAddress` is the signer of an agent-signed action: "User or API
  * Wallet <agent> does not exist" then means the agent is not approved.
+ * `network` picks the words of the short messages (default testnet).
  */
 export function toTradingError(
   error: unknown,
-  context: { agentAddress?: string } = {},
+  context: { agentAddress?: string; network?: Network } = {},
 ): TradingError {
   if (error instanceof TradingError) return error;
+  const messages = tradingMessages(context.network ?? "testnet");
   if (isUserRejection(error))
-    return new TradingError("rejected", MESSAGES.rejected, { cause: error });
+    return new TradingError("rejected", messages.rejected, { cause: error });
 
   const chain = causeChain(error);
   for (const item of chain) {
     const apiText = apiErrorText(item);
     if (apiText === null) continue;
+    const options = { cause: error, exchangeMessage: apiText };
     if (/must deposit/i.test(apiText)) {
-      return new TradingError("unfunded", MESSAGES.unfunded, { cause: error });
+      return new TradingError("unfunded", messages.unfunded, options);
     }
     if (/does not exist/i.test(apiText)) {
       const agent = context.agentAddress?.toLowerCase();
       const kind = agent && apiText.toLowerCase().includes(agent) ? "agent" : "unfunded";
-      return new TradingError(kind, MESSAGES[kind], { cause: error });
+      return new TradingError(kind, messages[kind], options);
     }
-    return new TradingError("api", apiText, { cause: error });
+    return new TradingError("api", apiText, options);
   }
 
-  if (isChainMismatch(error)) return new TradingError("chain", MESSAGES.chain, { cause: error });
+  if (isChainMismatch(error)) return new TradingError("chain", messages.chain, { cause: error });
 
   const network = chain.some(
     (item) =>
@@ -125,7 +145,7 @@ export function toTradingError(
       item.name === "AbortError" ||
       (item.name === "TypeError" && /fetch/i.test(text(item.message))),
   );
-  if (network) return new TradingError("network", MESSAGES.network, { cause: error });
+  if (network) return new TradingError("network", messages.network, { cause: error });
 
   const message = text(chain[0]?.message) || "Something went wrong.";
   return new TradingError("api", message, { cause: error });

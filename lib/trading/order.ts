@@ -2,15 +2,17 @@ import { formatPrice, formatSize } from "@nktkas/hyperliquid/utils";
 import { z } from "zod";
 
 import type { PerpAsset, PositionSide } from "@/lib/hyperliquid/schemas";
+import type { Network } from "@/lib/network";
+
+import { MIN_ORDER_USD } from "./config";
 
 /*
- * Pure order logic for the testnet copy trade. A "market" order on
+ * Pure order logic for the copy trade on both networks. A "market" order on
  * Hyperliquid is a limit order with time in force IOC and a price a little
  * through the mid. Prices and sizes follow the exchange's tick and lot rules.
  */
 
-/** The exchange rejects orders below $10 notional. */
-export const MIN_ORDER_USD = 10;
+export { MIN_ORDER_USD };
 /** The IOC price goes 1 % through the mid. */
 export const DEFAULT_SLIPPAGE = 0.01;
 
@@ -21,7 +23,22 @@ export class OrderTooSmallError extends Error {
   }
 }
 
-/** The asset of a coin in the testnet universe, or null when it is not listed. */
+const usdFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+
+/** The order size is above the per-order cap of the trading settings. */
+export class OrderTooLargeError extends Error {
+  constructor(maxOrderUsd: number) {
+    super(`The order is above your cap of $${usdFormat.format(maxOrderUsd)}.`);
+    this.name = "OrderTooLargeError";
+  }
+}
+
+/** Throws OrderTooLargeError when the size is above the cap (or not a number). */
+export function assertWithinCap(sizeUsd: number, maxOrderUsd: number): void {
+  if (!Number.isFinite(sizeUsd) || sizeUsd > maxOrderUsd) throw new OrderTooLargeError(maxOrderUsd);
+}
+
+/** The asset of a coin in the network's universe, or null when it is not listed. */
 export function findAsset(universe: readonly PerpAsset[], coin: string): PerpAsset | null {
   return universe.find((asset) => asset.name === coin) ?? null;
 }
@@ -67,6 +84,22 @@ export interface IocOrderInput {
 }
 
 /**
+ * The IOC limit price: the worst price that the order can fill at.
+ * Buy at mid * (1 + slippage), sell at mid * (1 - slippage), rounded down to
+ * the exchange's price rules.
+ */
+export function limitPrice(input: {
+  mid: number;
+  side: PositionSide;
+  slippage: number;
+  szDecimals: number;
+}): string {
+  const { mid, side, slippage, szDecimals } = input;
+  const px = side === "long" ? mid * (1 + slippage) : mid * (1 - slippage);
+  return roundPrice(px, szDecimals);
+}
+
+/**
  * Build an IOC order. Buy at mid * (1 + slippage), sell at mid * (1 - slippage).
  * The size is sizeUsd / mid, rounded down to szDecimals.
  * Throws OrderTooSmallError when the rounded size is 0 or below $10 at the mid.
@@ -86,11 +119,10 @@ export function buildIocOrder(input: IocOrderInput): IocOrder {
   if (Number(size) * mid < MIN_ORDER_USD) throw new OrderTooSmallError();
 
   const isBuy = side === "long";
-  const limitPx = isBuy ? mid * (1 + slippage) : mid * (1 - slippage);
   return {
     a: assetIndex,
     b: isBuy,
-    p: roundPrice(limitPx, szDecimals),
+    p: limitPrice({ mid, side, slippage, szDecimals }),
     s: size,
     r: false,
     t: { limit: { tif: "Ioc" } },
@@ -155,24 +187,29 @@ export function summarizeOrderResponse(body: unknown): OrderResult | null {
 // ---------------------------------------------------------------------------
 
 export interface OrderBlockInput {
+  network: Network;
   asset: PerpAsset | null;
   mid: number | undefined;
-  /** Available testnet balance in USD, undefined while it loads. */
+  /** Available balance in USD on the network, undefined while it loads. */
   balanceUsd: number | undefined;
   sizeUsd: number;
   leverage: number;
+  /** The per-order cap of the trading settings. */
+  maxOrderUsd: number;
 }
 
 /** The reason that blocks the order, or null when the order can go out. */
 export function orderBlockReason(input: OrderBlockInput): string | null {
-  const { asset, mid, balanceUsd, sizeUsd, leverage } = input;
-  if (!asset) return "Not listed on testnet.";
-  if (asset.isDelisted) return "Delisted on testnet.";
-  if (mid === undefined) return "Waiting for the testnet price.";
+  const { network, asset, mid, balanceUsd, sizeUsd, leverage, maxOrderUsd } = input;
+  if (!asset) return `Not listed on ${network}.`;
+  if (asset.isDelisted) return `Delisted on ${network}.`;
+  if (mid === undefined) return `Waiting for the ${network} price.`;
   if (sizeUsd < MIN_ORDER_USD) return `The minimum order is $${MIN_ORDER_USD}.`;
-  if (balanceUsd === undefined) return "Loading the testnet balance.";
-  if (balanceUsd <= 0) return "No testnet balance.";
-  if (sizeUsd / leverage > balanceUsd) return "The margin is above the testnet balance.";
+  if (sizeUsd > maxOrderUsd)
+    return `The size is above your cap of $${usdFormat.format(maxOrderUsd)}.`;
+  if (balanceUsd === undefined) return `Loading the ${network} balance.`;
+  if (balanceUsd <= 0) return `No ${network} balance.`;
+  if (sizeUsd / leverage > balanceUsd) return `The margin is above the ${network} balance.`;
   return null;
 }
 

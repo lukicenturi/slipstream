@@ -1,7 +1,9 @@
 /*
  * The network of this build. A build has exactly one network:
- * - mainnet: reads mainnet data and is read-only;
- * - testnet: reads testnet data everywhere and can place testnet orders.
+ * - mainnet: reads mainnet data;
+ * - testnet: reads testnet data everywhere.
+ * Trading is a separate switch (lib/trading/config.ts): a build trades only
+ * when NEXT_PUBLIC_TRADING_MODE equals its network.
  * The app never switches network at run time. The network switch in the
  * header is a link to the other deployment.
  *
@@ -55,7 +57,9 @@ export const ENDPOINTS = {
 
 /**
  * Testnet when either variable is exactly "testnet", else mainnet.
- * NEXT_PUBLIC_NETWORK is the switch; NEXT_PUBLIC_TRADING_MODE still works.
+ * NEXT_PUBLIC_NETWORK is the switch; NEXT_PUBLIC_TRADING_MODE=testnet still
+ * selects testnet. NEXT_PUBLIC_TRADING_MODE=mainnet does not change the
+ * network: mainnet is the default.
  */
 export function parseNetwork(
   networkEnv: string | undefined,

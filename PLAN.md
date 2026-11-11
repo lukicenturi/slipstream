@@ -5,7 +5,7 @@
 A read-only "follow the smart money" web app: leaderboard, live trade feed, trader profiles, and a mocked copy-trade sheet. Built as a portfolio piece for Arbital (onchain social trading; React, TypeScript, React Native).
 
 - **Budget:** about 2 days. Hard cutoff after Phase 4. Phase 5 is a bonus.
-- **Rule:** production is read-only. Trading exists only on Hyperliquid testnet behind `NEXT_PUBLIC_TRADING_MODE=testnet`. Never create a mainnet exchange client. Never ask for or store a user's wallet key; only a generated agent key may be stored, in localStorage, for testnet. The only server-side state is the push subscription store in Cloudflare D1 (push endpoint, network, watched addresses, threshold, optional labels). No accounts and no other user data.
+- **Rule:** trading is enabled per build by `NEXT_PUBLIC_TRADING_MODE` (`testnet` or `mainnet`, matching the build's network). Mainnet trading was enabled by the user on 2026-11-11, accepting the risk. Every exchange call starts with `assertTradingEnabled`. Safeguards stay: review step before every order, per-order size cap, 24 h agent key on mainnet, risk acknowledgement. Never ask for or store a user's wallet key; only a generated agent key may be stored, in localStorage. The only server-side state is the push subscription store in Cloudflare D1 (push endpoint, network, watched addresses, threshold, optional labels). No accounts and no other user data.
 
 ## Stack
 
@@ -246,6 +246,22 @@ A text-only wordmark and one icon set derived from the same type.
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` pass, and the build lists `/icon.svg`, `/apple-icon.png`, `/opengraph-image` and `/twitter-image`; the header shows the two-colour wordmark at the same height and fits one line at 375 px in both builds; every asset returns 200 with the right type and `/favicon.ico` has 3 images.
 
+## Phase 4l: mainnet trading at parity
+
+The user asked for mainnet trading at parity with testnet and accepts the risk (2026-11-11, see DECISIONS.md). The same flow runs on both networks, with safeguards.
+
+- [x] `lib/trading/config.ts`: `TradingMode` is `off | testnet | mainnet`; `TRADING_ENABLED` only when the mode equals the build's network; `assertTradingEnabled(mode, network)`; `TRADING` (the build's endpoints); `TRADING_LIMITS` per network
+- [x] `lib/trading/exchange.ts`: `createTradingTransport()` follows the network, with a host pin per network; `TradingClient`; the assert is the first line of every function
+- [x] `lib/trading/agent.ts`: key `slipstream.agent.<network>.<owner>` (the old testnet key moves once); TTL 24 h on mainnet, 7 days on testnet; remaining time for the sheet
+- [x] `lib/trading/settings.ts` + `hooks/useTradingSettings.ts`: per-order cap ($500 mainnet, $10,000 testnet, at most $50,000), inline editor in the sheet
+- [x] `lib/trading/riskAck.ts` + `hooks/useRiskAck.ts`: the mainnet risk acknowledgement, kept 30 days
+- [x] `components/trading/TradingCopyTradeForm.tsx`: network badge, risk panel (mainnet), size cap, "Review order" with the worst fill price, "Place mainnet order" / "Place testnet order", agent expiry, Forget and Revoke links
+- [x] Wallet popover, `/account` and the footer show the trading framing on both networks
+- [x] Tests: config, exchange matrix, agent, settings, risk acknowledgement, order cap and `lib/trading/parity.test.ts`
+- [x] README, DECISIONS and this checklist updated; the new CLAUDE.md rule text is in DECISIONS.md
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass; `pnpm build` passes with no variable, with `NEXT_PUBLIC_TRADING_MODE=testnet` and with `NEXT_PUBLIC_TRADING_MODE=mainnet`; the no-variable sheet is still the demo; in both trading builds a fake wallet reaches the network's exchange host for the approval and the order path, the sheet shows the exchange text verbatim, and 375 px has no horizontal scroll.
+
 ## Phase 5a: push alerts
 
 Alerts reach the user when no Slipstream tab is open. A Cloudflare Worker (`workers/push/`) with a D1 store polls the tracked addresses once a minute and sends Web Push messages; the app's service worker shows them. Free tiers only.
@@ -297,7 +313,7 @@ screenshots/                  design reference images (read-only)
 
 ## Note for the recruiter
 
-> **Slipstream** ([live, read-only](https://slipstream-hl.vercel.app), [testnet with copy trading](https://slipstream-testnet.vercel.app), [GitHub](https://github.com/lukicenturi/slipstream)): A read-only social trading feed for Hyperliquid perps, with a separate testnet build for copy trading, built over a weekend to explore Arbital's problem space. Solo project: I designed the architecture, the typed API layer, the real-time WebSocket feed and the mobile-first UI, using AI coding tools to move fast.
+> **Slipstream** ([live](https://slipstream-hl.vercel.app), [testnet with copy trading](https://slipstream-testnet.vercel.app), [GitHub](https://github.com/lukicenturi/slipstream)): A read-only social trading feed for Hyperliquid perps, with a separate testnet build for copy trading, built over a weekend to explore Arbital's problem space. Solo project: I designed the architecture, the typed API layer, the real-time WebSocket feed and the mobile-first UI, using AI coding tools to move fast.
 
 ## References
 
