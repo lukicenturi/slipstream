@@ -1,0 +1,40 @@
+# Slipstream: project rules
+
+Read `PLAN.md` first. Work on one phase at a time and stop when its "Done when" check passes.
+
+## Workflow
+
+- Always use the `/ship-simple` command to implement any work in this project: every phase, feature, fix and refactor. This is the default and applies even when the prompt does not mention it: invoke `/ship-simple` yourself before writing or changing any code. Do not implement changes outside it.
+
+## Hard rules
+
+- The app is read-only. Never add wallet connection, signing, or any call to Hyperliquid's exchange endpoint.
+- The raw leaderboard file is fetched server-side only, trimmed and cached. Never fetch it from the browser.
+- Before writing a schema, `curl` the endpoint, save the response in `fixtures/`, and derive the zod schema from it. Do not guess field names.
+
+## Design
+
+- Before building or changing any UI, view the reference images in `screenshots/` and follow the "Design direction" section of `PLAN.md`.
+- Match the references' density, typography and layout. Do not copy their logos, brand names or exact palettes.
+- Never ship default shadcn styling. No gradients, no emoji, small radius, 1 px borders, tabular numbers.
+- After finishing a screen, compare it against the matching reference and tighten spacing and type until the density is similar.
+
+## Code style
+
+- TypeScript strict. No `any`, no `@ts-ignore`, no non-null assertions without a comment explaining why.
+- Validate every external response with zod at the boundary; components only see parsed types.
+- API numbers arrive as strings: parse them in the client layer, not in components.
+- Business logic (win rate, liquidation estimate, fill aggregation) lives in `lib/calc/` as pure functions with Vitest tests.
+- Components are small and presentational; data fetching lives in hooks.
+- One shared WebSocket connection via `lib/hyperliquid/ws.ts`. Components never open their own socket.
+- Every data view has loading, empty and error states.
+- Mobile-first: design at 375 px wide, then scale up.
+
+## Commands
+
+- `pnpm dev` to run locally
+- `pnpm lint && pnpm typecheck && pnpm test` must pass before a phase is done
+
+## Commits
+
+- Small commits with conventional messages (`feat:`, `fix:`, `test:`, `docs:`).

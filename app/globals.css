@@ -1,0 +1,220 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Slipstream design tokens. Dark theme only.
+ * The raw tokens live on :root. The shadcn variables point at them,
+ * so every shadcn component uses the same palette.
+ * Note: shadcn uses --accent for hover surfaces. Our amber accent
+ * is --primary (and --brand), so hover states stay neutral.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Raw tokens */
+  --ss-bg: #0a0b0d;
+  --ss-surface: #111317;
+  --ss-surface-hover: #171a1f;
+  --ss-border: #22262d;
+  --ss-border-strong: #2e333b;
+  --ss-text: #e6e8eb;
+  --ss-text-muted: #8b919a;
+  --ss-text-faint: #5c636d;
+  --ss-accent: #f2b544;
+  --ss-on-accent: #0a0b0d;
+  --ss-accent-dim: rgba(242, 181, 68, 0.12);
+  --ss-long: #2fbf71;
+  --ss-long-dim: rgba(47, 191, 113, 0.12);
+  --ss-short: #e5484d;
+  --ss-short-dim: rgba(229, 72, 77, 0.12);
+
+  /* shadcn variables mapped to the tokens */
+  --background: var(--ss-bg);
+  --foreground: var(--ss-text);
+  --card: var(--ss-surface);
+  --card-foreground: var(--ss-text);
+  --popover: var(--ss-surface);
+  --popover-foreground: var(--ss-text);
+  --primary: var(--ss-accent);
+  --primary-foreground: var(--ss-on-accent);
+  --secondary: var(--ss-surface);
+  --secondary-foreground: var(--ss-text);
+  --muted: var(--ss-surface);
+  --muted-foreground: var(--ss-text-muted);
+  --accent: var(--ss-surface-hover);
+  --accent-foreground: var(--ss-text);
+  --destructive: var(--ss-short);
+  --border: var(--ss-border);
+  --input: var(--ss-border-strong);
+  --ring: var(--ss-accent);
+  --chart-1: var(--ss-accent);
+  --chart-2: var(--ss-long);
+  --chart-3: var(--ss-short);
+  --chart-4: var(--ss-text-muted);
+  --chart-5: var(--ss-text-faint);
+  --sidebar: var(--ss-surface);
+  --sidebar-foreground: var(--ss-text);
+  --sidebar-primary: var(--ss-accent);
+  --sidebar-primary-foreground: var(--ss-on-accent);
+  --sidebar-accent: var(--ss-surface-hover);
+  --sidebar-accent-foreground: var(--ss-text);
+  --sidebar-border: var(--ss-border);
+  --sidebar-ring: var(--ss-accent);
+
+  --radius: 4px;
+}
+
+/* The same values apply under .dark, which is always set on <html>. */
+.dark {
+  color-scheme: dark;
+}
+
+@theme inline {
+  /* Colours */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Slipstream colours */
+  --color-surface: var(--ss-surface);
+  --color-surface-hover: var(--ss-surface-hover);
+  --color-border-strong: var(--ss-border-strong);
+  --color-faint: var(--ss-text-faint);
+  --color-brand: var(--ss-accent);
+  --color-brand-dim: var(--ss-accent-dim);
+  --color-on-brand: var(--ss-on-accent);
+  --color-long: var(--ss-long);
+  --color-long-dim: var(--ss-long-dim);
+  --color-short: var(--ss-short);
+  --color-short-dim: var(--ss-short-dim);
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale (px): 11 label, 12 cell, 13 body, 14 emphasis, 16, 20 title, 28 hero */
+  --text-2xs: 11px;
+  --text-2xs--line-height: 16px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 13px;
+  --text-sm--line-height: 18px;
+  --text-base: 14px;
+  --text-base--line-height: 20px;
+  --text-lg: 16px;
+  --text-lg--line-height: 22px;
+  --text-xl: 20px;
+  --text-xl--line-height: 26px;
+  --text-hero: 28px;
+  --text-hero--line-height: 32px;
+
+  /* Radius: 2 px small, 4 px default, 6 px large. Larger keys collapse to 6 px. */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
+  --radius-3xl: 6px;
+  --radius-4xl: 6px;
+
+  /* No shadows */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+
+  /* Motion */
+  --animate-flash-up: flash-up 600ms ease-out;
+  --animate-flash-down: flash-down 600ms ease-out;
+  --animate-slide-in: slide-in 200ms ease-out;
+
+  @keyframes flash-up {
+    from {
+      background-color: var(--ss-long-dim);
+    }
+    to {
+      background-color: transparent;
+    }
+  }
+
+  @keyframes flash-down {
+    from {
+      background-color: var(--ss-short-dim);
+    }
+    to {
+      background-color: transparent;
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply bg-background font-sans;
+  }
+  body {
+    @apply bg-background text-sm text-foreground;
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 1px solid var(--ss-accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
