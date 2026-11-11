@@ -132,3 +132,25 @@ export function formatDuration(ms: number): string {
     .map(([amount, unit]) => `${amount}${unit}`)
     .join(" ");
 }
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function pad2(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+/**
+ * Local clock time "HH:mm:ss" (24 h). Times on an earlier day get the date
+ * in front ("Nov 9 14:02:11"), so an old fill does not look like today.
+ */
+export function formatClockTime(timeMs: number, now: number = Date.now()): string {
+  if (!Number.isFinite(timeMs)) return EMPTY_VALUE;
+  const date = new Date(timeMs);
+  const clock = `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+  const today = new Date(now);
+  const sameDay =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate();
+  return sameDay ? clock : `${MONTHS[date.getMonth()]} ${date.getDate()} ${clock}`;
+}

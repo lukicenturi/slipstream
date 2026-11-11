@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatClockTime,
   formatDuration,
   formatPercent,
   formatPrice,
@@ -107,5 +108,22 @@ describe("formatDuration", () => {
   it("drops a zero second unit and handles zero", () => {
     expect(formatDuration(2 * 3_600_000)).toBe("2h");
     expect(formatDuration(0)).toBe("0s");
+  });
+});
+
+describe("formatClockTime", () => {
+  // Local times, so the test passes in any time zone.
+  const now = new Date(2026, 10, 11, 18, 0, 0).getTime();
+
+  it("shows HH:mm:ss for a time on the same day", () => {
+    expect(formatClockTime(new Date(2026, 10, 11, 9, 5, 3).getTime(), now)).toBe("09:05:03");
+  });
+
+  it("puts the date in front of a time on an earlier day", () => {
+    expect(formatClockTime(new Date(2026, 10, 9, 14, 2, 11).getTime(), now)).toBe("Nov 9 14:02:11");
+  });
+
+  it("returns an em dash for a value that is not finite", () => {
+    expect(formatClockTime(Number.NaN, now)).toBe("—");
   });
 });
