@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/brand/wordmark.svg">
+  <img src="public/brand/wordmark-light.svg" alt="Slipstream" width="240">
+</picture>
+
 # Slipstream
 
 Slipstream is a social feed for Hyperliquid perps traders. It shows the top 100 traders by 30-day PnL, a live feed of their orders, and a profile page for any address with open positions, a PnL chart and recent fills. The prices and the PnL update live from one shared WebSocket. A copy-trade sheet shows the margin and the liquidation price that a copy would need.
@@ -128,6 +133,18 @@ flowchart LR
 - Vitest 5 for unit tests
 - Vercel for hosting
 - Cloudflare Workers, Cron Triggers and D1 for push alerts; `@block65/webcrypto-web-push` for VAPID and payload encryption
+
+## Design
+
+- **Wordmark and icons.** The wordmark is the word `slipstream` in Geist Sans 600: `slip` in the text colour, `stream` in amber, with a thin amber bar under `stream`. The header draws it as live text (`components/layout/Wordmark.tsx`). `public/brand/` has outlined SVG copies for dark and light backgrounds and the `s` monogram. The favicon (`app/favicon.ico` with 16, 32 and 48 px layers, `app/icon.svg`), the Apple touch icon (`app/apple-icon.png`), the PWA icons and the push badge (`public/icons/`) all use the monogram. `app/opengraph-image.tsx` makes the 1200 x 630 social image.
+- **Regenerate the brand assets.** The generators in `scripts/brand/` need `opentype.js`, `@fontsource/geist-sans` and `playwright`. They are not app dependencies. Install them in a scratch folder and point `BRAND_TOOLS` at it:
+
+  ```bash
+  mkdir -p /tmp/brand && cd /tmp/brand && npm init -y
+  npm i opentype.js @fontsource/geist-sans playwright && npx playwright install chromium
+  BRAND_TOOLS=/tmp/brand node <repo>/scripts/brand/make-wordmark.mjs   # SVGs
+  BRAND_TOOLS=/tmp/brand node <repo>/scripts/brand/make-icons.mjs      # PNGs and the ICO
+  ```
 
 ## Trade-offs
 
@@ -370,7 +387,8 @@ lib/names/           ENS and HL Names resolvers (server-only), schemas, cache, b
 lib/calc/            pure business logic with tests
 lib/trading/         testnet trading: mode guard, orders, agent key, errors, exchange calls
 lib/push.ts          push alert helpers (subscription body, availability, stored state)
-public/              service worker (sw.js) and app icons
+public/              service worker (sw.js), PWA icons and push badge (icons/), outlined wordmark and monogram (brand/)
+scripts/brand/       generators for the wordmark SVGs and the icon set (run from a scratch folder)
 workers/push/        Cloudflare Worker: push API, D1 store, one-minute watcher
 fixtures/            trimmed real API responses
 docs/                README images

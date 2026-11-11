@@ -9,13 +9,14 @@ import { AddressSearch } from "./AddressSearch";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { HeaderNav, HeaderNavLinks } from "./HeaderNav";
 import { NetworkSwitch } from "./NetworkSwitch";
+import { Wordmark } from "./Wordmark";
 
 export function Header() {
   return (
     <header className="sticky top-0 z-20 border-b bg-background">
       <div className="mx-auto flex h-12 w-full max-w-[1440px] items-center gap-2 px-4 sm:gap-3 lg:gap-6 lg:px-6">
-        <Link href="/" className="shrink-0 text-base font-semibold tracking-wide text-foreground">
-          Slipstream
+        <Link href="/" aria-label="Slipstream, home" className="shrink-0">
+          <Wordmark />
         </Link>
         {/* The network switch sits next to the wordmark from sm up, and in the icon group below. */}
         <NetworkSwitch className="hidden sm:inline-flex lg:-ml-3" />

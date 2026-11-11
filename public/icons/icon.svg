@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Slipstream monogram: a white "S" stroke with an amber mark on the app background. -->
-  <rect width="512" height="512" fill="#0a0b0d"/>
-  <g fill="none" stroke="#f4f5f6" stroke-width="44" stroke-linecap="butt">
-    <path d="M336 168C314 138 285 124 252 124C204 124 172 152 172 190C172 230 206 245 256 257C311 270 344 288 344 331C344 372 308 396 256 396C216 396 186 380 166 350"/>
-  </g>
-  <rect x="166" y="430" width="178" height="18" rx="2" fill="#f2b544"/>
-</svg>

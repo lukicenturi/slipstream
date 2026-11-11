@@ -234,6 +234,18 @@ Connect a wallet on either host. On mainnet it only reads your address; on testn
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` (both modes) pass; on mainnet a fake wallet connects, `/account` shows its account, and the provider log has no signature request and the network log no `/exchange` request; the testnet build still connects, approves and trades as before; 375 px has no horizontal scroll.
 
+## Phase 4k: wordmark and icons
+
+A text-only wordmark and one icon set derived from the same type.
+
+- [x] `components/layout/Wordmark.tsx`: `slipstream` in Geist Sans 600, -0.02em, `slip` in the text colour, `stream` in amber with a 1.5 px amber bar 2 px under the baseline; sizes `sm` (header, 14 px, 15 px from `sm`) and `lg`; the header link has `aria-label="Slipstream, home"`
+- [x] `public/brand/wordmark.svg`, `wordmark-light.svg` and `monogram.svg` with outlined glyphs (`scripts/brand/make-wordmark.mjs`, opentype.js in a scratch folder)
+- [x] `app/icon.svg`, `app/favicon.ico` (16, 32, 48 px), `app/apple-icon.png` (180 px) and the regenerated `public/icons/*` (`scripts/brand/make-icons.mjs`, headless Chromium); the manual `icons` metadata is removed
+- [x] `app/opengraph-image.tsx` (1200 x 630, outlined wordmark and a Geist Mono tagline from `app/fonts/`) and `app/twitter-image.tsx`; `openGraph`, `twitter` and `metadataBase` in the layout
+- [x] README, DECISIONS and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` pass, and the build lists `/icon.svg`, `/apple-icon.png`, `/opengraph-image` and `/twitter-image`; the header shows the two-colour wordmark at the same height and fits one line at 375 px in both builds; every asset returns 200 with the right type and `/favicon.ico` has 3 images.
+
 ## Phase 5a: push alerts
 
 Alerts reach the user when no Slipstream tab is open. A Cloudflare Worker (`workers/push/`) with a D1 store polls the tracked addresses once a minute and sends Web Push messages; the app's service worker shows them. Free tiers only.
