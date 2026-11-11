@@ -96,13 +96,13 @@ Borrow layout, density and interaction patterns only. Do not copy logos, brand n
 
 Route: `/trader/[address]`
 
-- [ ] Header: address with copy button, account value, total PnL, win rate, link to the Hyperliquid explorer
-- [ ] Win rate computed from `closedPnl` on fills (pure function, unit-tested)
-- [ ] Open positions table: asset, side, size, leverage, entry, mark, unrealized PnL (live from `allMids`), liquidation price
-- [ ] PnL chart with day / week / month / all-time toggle
-- [ ] Recent fills list
-- [ ] Address search in the header with validation (0x + 40 hex chars) and a clear error for invalid or empty accounts
-- [ ] Follow button and a watchlist stored in localStorage (wrapped in try/catch)
+- [x] Header: address with copy button, account value, total PnL, win rate, link to the Hyperliquid explorer
+- [x] Win rate computed from `closedPnl` on fills (pure function, unit-tested)
+- [x] Open positions table: asset, side, size, leverage, entry, mark, unrealized PnL (live from `allMids`), liquidation price
+- [x] PnL chart with day / week / month / all-time toggle
+- [x] Recent fills list
+- [x] Address search in the header with validation (0x + 40 hex chars) and a clear error for invalid or empty accounts
+- [x] Follow button and a watchlist stored in localStorage (wrapped in try/catch)
 
 **Done when:** pasting any active address shows positions whose PnL ticks with price.
 

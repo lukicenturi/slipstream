@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { describeFillAction, sideLabel } from "./fillAction";
+import { describeFillAction, isSystemFill, sideLabel } from "./fillAction";
 
 describe("describeFillAction", () => {
   it.each([
@@ -30,5 +30,16 @@ describe("sideLabel", () => {
   it("falls back to buy and sell", () => {
     expect(sideLabel(describeFillAction("Sell"), "sell")).toEqual({ label: "Sell", tone: "short" });
     expect(sideLabel(describeFillAction("Buy"), "buy")).toEqual({ label: "Buy", tone: "long" });
+  });
+});
+
+describe("isSystemFill", () => {
+  it("is true for a spot dust conversion", () => {
+    expect(isSystemFill("Spot Dust Conversion")).toBe(true);
+  });
+
+  it("is false for trades of the user", () => {
+    expect(isSystemFill("Open Long")).toBe(false);
+    expect(isSystemFill("Buy")).toBe(false);
   });
 });

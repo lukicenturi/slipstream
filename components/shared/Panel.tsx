@@ -2,7 +2,11 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** A bordered panel with a 40 px header row. The body scrolls on desktop. */
+/**
+ * A bordered panel with a 40 px header row. The body scrolls on desktop.
+ * By default the title is visually hidden below `lg`, because the home
+ * page shows the same words in its tab bar. Set `titleOnMobile` to show it.
+ */
 export function Panel({
   title,
   titleId,
@@ -10,6 +14,7 @@ export function Panel({
   actions,
   children,
   className,
+  titleOnMobile = false,
 }: {
   title: string;
   titleId: string;
@@ -17,6 +22,7 @@ export function Panel({
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
+  titleOnMobile?: boolean;
 }) {
   return (
     <section
@@ -27,7 +33,13 @@ export function Panel({
       )}
     >
       <header className="flex h-10 shrink-0 items-center gap-2 border-b px-3">
-        <h2 id={titleId} className="text-sm font-semibold text-foreground max-lg:sr-only">
+        <h2
+          id={titleId}
+          className={cn(
+            "text-sm font-semibold text-foreground",
+            !titleOnMobile && "max-lg:sr-only",
+          )}
+        >
           {title}
         </h2>
         {meta ? <div className="min-w-0 truncate text-2xs text-faint">{meta}</div> : null}

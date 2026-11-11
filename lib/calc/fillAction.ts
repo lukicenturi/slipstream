@@ -50,3 +50,14 @@ export function sideLabel(
   if (action.positionSide === "short") return { label: "Short", tone: "short" };
   return side === "buy" ? { label: "Buy", tone: "long" } : { label: "Sell", tone: "short" };
 }
+
+/** `dir` values that the exchange creates on its own, not trades of the user. */
+const SYSTEM_DIRS = new Set(["Spot Dust Conversion"]);
+
+/**
+ * True for fills that the exchange creates on its own, such as a spot dust
+ * conversion. They do not count as activity of the trader.
+ */
+export function isSystemFill(dir: string): boolean {
+  return SYSTEM_DIRS.has(dir);
+}

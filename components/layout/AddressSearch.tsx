@@ -8,8 +8,8 @@ import { normalizeAddress } from "@/lib/address";
 import { cn } from "@/lib/utils";
 
 /**
- * Search for a trader by address. It checks the address and opens the
- * profile. Phase 3 adds the profile page.
+ * Search for a trader by address. It checks the address, shows an inline
+ * error, and opens the profile with a lower-case address.
  */
 export function AddressSearch({ className }: { className?: string }) {
   const router = useRouter();
@@ -25,10 +25,11 @@ export function AddressSearch({ className }: { className?: string }) {
     }
     const address = normalizeAddress(value);
     if (!address) {
-      setError("Not a valid address");
+      setError("Not a valid address. Expected 0x followed by 40 hex characters.");
       return;
     }
     setError(null);
+    setValue("");
     router.push(`/trader/${address}`);
   }
 
@@ -59,7 +60,7 @@ export function AddressSearch({ className }: { className?: string }) {
         <p
           id={errorId}
           role="alert"
-          className="absolute top-full left-0 z-10 mt-1 rounded-sm border border-short/40 bg-background px-2 py-1 text-2xs text-short"
+          className="absolute top-full left-0 z-30 mt-1 max-w-[min(20rem,calc(100vw-2rem))] rounded-sm border border-short/40 bg-background px-2 py-1 text-2xs text-short"
         >
           {error}
         </p>

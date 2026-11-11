@@ -1,15 +1,10 @@
 import Link from "next/link";
 import { memo } from "react";
 
+import { signTone } from "@/components/shared/tone";
 import { formatPercent, formatUsd, shortAddress } from "@/lib/format";
 import type { LeaderboardEntry, TimeWindow } from "@/lib/hyperliquid/schemas";
 import { cn } from "@/lib/utils";
-
-function tone(value: number): string {
-  if (value > 0) return "text-long";
-  if (value < 0) return "text-short";
-  return "text-muted-foreground";
-}
 
 /** A USD value: compact below `sm`, full from `sm` up. */
 function Usd({ value, signed = false }: { value: number; signed?: boolean }) {
@@ -51,10 +46,14 @@ export const LeaderboardRow = memo(function LeaderboardRow({
       <td className="hidden px-3 text-right font-mono text-xs whitespace-nowrap sm:table-cell">
         <Usd value={entry.accountValue} />
       </td>
-      <td className={cn("px-2 text-right font-mono text-xs whitespace-nowrap sm:px-3", tone(pnl))}>
+      <td
+        className={cn("px-2 text-right font-mono text-xs whitespace-nowrap sm:px-3", signTone(pnl))}
+      >
         <Usd value={pnl} signed />
       </td>
-      <td className={cn("px-2 text-right font-mono text-xs whitespace-nowrap sm:px-3", tone(roi))}>
+      <td
+        className={cn("px-2 text-right font-mono text-xs whitespace-nowrap sm:px-3", signTone(roi))}
+      >
         {formatPercent(roi, { signed: true })}
       </td>
     </tr>
