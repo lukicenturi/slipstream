@@ -180,6 +180,27 @@ describe("HyperliquidSocket", () => {
     expect(sockets).toHaveLength(2);
   });
 
+  it("tracks the time since the socket left the open state", () => {
+    const { client, last } = setup();
+    expect(client.getDownSince()).toBeNull();
+    vi.setSystemTime(1_000);
+    client.subscribe({ type: "allMids" }, () => {});
+    expect(client.getDownSince()).toBe(1_000);
+    last().open();
+    expect(client.getDownSince()).toBeNull();
+
+    vi.setSystemTime(5_000);
+    last().close();
+    expect(client.getDownSince()).toBe(5_000);
+    // A failed retry keeps the first down time.
+    vi.advanceTimersByTime(1_000);
+    last().close();
+    expect(client.getDownSince()).toBe(5_000);
+    vi.advanceTimersByTime(2_000);
+    last().open();
+    expect(client.getDownSince()).toBeNull();
+  });
+
   it("pings every 50 s while open", () => {
     const { client, last } = setup();
     client.subscribe({ type: "allMids" }, () => {});

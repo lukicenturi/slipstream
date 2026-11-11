@@ -47,6 +47,7 @@ export interface SocketOptions {
   random?: () => number;
   pingIntervalMs?: number;
   idleCloseMs?: number;
+  now?: () => number;
 }
 
 const OPEN = 1;
@@ -76,10 +77,13 @@ export class HyperliquidSocket {
   private readonly random: () => number;
   private readonly pingIntervalMs: number;
   private readonly idleCloseMs: number;
+  private readonly now: () => number;
 
   private socket: SocketLike | null = null;
   private readonly entries = new Map<string, Entry>();
   private status: ConnectionStatus = "closed";
+  /** When the socket stopped being open, or null while open or before first use. */
+  private downSince: number | null = null;
   private readonly statusListeners = new Set<() => void>();
   private attempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -93,6 +97,7 @@ export class HyperliquidSocket {
     this.random = options.random ?? Math.random;
     this.pingIntervalMs = options.pingIntervalMs ?? 50_000;
     this.idleCloseMs = options.idleCloseMs ?? 5_000;
+    this.now = options.now ?? Date.now;
   }
 
   subscribe<S extends Subscription>(
@@ -125,6 +130,14 @@ export class HyperliquidSocket {
 
   getStatus(): ConnectionStatus {
     return this.status;
+  }
+
+  /**
+   * The time (ms) when the socket left the open state, or null while it is
+   * open. It changes only together with the status, so onStatus covers it.
+   */
+  getDownSince(): number | null {
+    return this.downSince;
   }
 
   onStatus(listener: () => void): Unsubscribe {
@@ -321,6 +334,8 @@ export class HyperliquidSocket {
 
   private setStatus(status: ConnectionStatus): void {
     if (this.status === status) return;
+    if (status === "open") this.downSince = null;
+    else if (this.status === "open" || this.downSince === null) this.downSince = this.now();
     this.status = status;
     for (const listener of [...this.statusListeners]) listener();
   }
