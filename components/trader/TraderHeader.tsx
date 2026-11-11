@@ -3,6 +3,7 @@
 import { CopyIcon, ExternalLinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { Blockie } from "@/components/shared/Blockie";
 import { Stat, STAT_GRID, StatNote, StatValue } from "@/components/shared/Stat";
 import { EmptyState, ErrorState } from "@/components/shared/States";
 import { signTone } from "@/components/shared/tone";
@@ -83,43 +84,47 @@ export function TraderHeader({
   return (
     <section aria-labelledby="trader-title" className="flex flex-col gap-3">
       <div className="flex items-end gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
-            Trader
-          </p>
-          {name.source === "address" ? (
-            <div className="mt-0.5 flex min-w-0 items-center gap-1">
-              <h1
-                id="trader-title"
-                title={address}
-                className="min-w-0 truncate font-mono text-base text-foreground lg:text-lg"
-              >
-                <span className="md:hidden">{shortAddress(address)}</span>
-                <span className="hidden md:inline">{address}</span>
-              </h1>
-              <AddressActions address={address} />
-            </div>
-          ) : (
-            <>
-              <h1
-                id="trader-title"
-                title={address}
-                className="mt-0.5 min-w-0 truncate text-base font-medium text-foreground lg:text-lg"
-              >
-                {name.label}
-              </h1>
-              <div className="flex min-w-0 items-center gap-1">
-                <span
-                  data-testid="trader-address"
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 lg:gap-3">
+          {/* 32 px on mobile, 40 px from lg up (the header line is tall enough there). */}
+          <Blockie address={address} size={32} className="lg:size-10" />
+          <div className="min-w-0 flex-1">
+            <p className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
+              Trader
+            </p>
+            {name.source === "address" ? (
+              <div className="mt-0.5 flex min-w-0 items-center gap-1">
+                <h1
+                  id="trader-title"
                   title={address}
-                  className="truncate font-mono text-xs text-muted-foreground"
+                  className="min-w-0 truncate font-mono text-base text-foreground lg:text-lg"
                 >
-                  {shortAddress(address)}
-                </span>
+                  <span className="md:hidden">{shortAddress(address)}</span>
+                  <span className="hidden md:inline">{address}</span>
+                </h1>
                 <AddressActions address={address} />
               </div>
-            </>
-          )}
+            ) : (
+              <>
+                <h1
+                  id="trader-title"
+                  title={address}
+                  className="mt-0.5 min-w-0 truncate text-base font-medium text-foreground lg:text-lg"
+                >
+                  {name.label}
+                </h1>
+                <div className="flex min-w-0 items-center gap-1">
+                  <span
+                    data-testid="trader-address"
+                    title={address}
+                    className="truncate font-mono text-xs text-muted-foreground"
+                  >
+                    {shortAddress(address)}
+                  </span>
+                  <AddressActions address={address} />
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <FollowButton address={address} />
       </div>

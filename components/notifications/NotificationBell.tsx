@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { RelativeTime } from "@/components/feed/RelativeTime";
 import { AssetIcon } from "@/components/shared/AssetIcon";
+import { Blockie } from "@/components/shared/Blockie";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTraderLabels } from "@/hooks/useNames";
@@ -181,6 +182,7 @@ function NoticeRow({
       >
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex min-w-0 items-center gap-1 text-xs">
+            <Blockie address={notice.address} className="mr-0.5" />
             <span
               className={cn(
                 "min-w-0 shrink truncate",

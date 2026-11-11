@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useConnection, useDisconnect } from "wagmi";
 
+import { Blockie } from "@/components/shared/Blockie";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -74,6 +75,7 @@ export default function WalletButton() {
           className="w-7 shrink-0 px-0 sm:w-auto sm:px-2"
         >
           <WalletIcon aria-hidden="true" className="text-brand sm:hidden" />
+          <Blockie address={address} className="max-sm:hidden" />
           <span className="hidden font-mono sm:inline">{short}</span>
         </Button>
       </PopoverTrigger>
@@ -82,7 +84,10 @@ export default function WalletButton() {
           <span className="font-mono text-xs text-foreground">{short}</span>
           <TestnetBadge />
         </div>
-        <p className="mt-1 font-mono text-2xs break-all text-faint">{address.toLowerCase()}</p>
+        <div className="mt-1 flex items-start gap-1.5">
+          <Blockie address={address} />
+          <p className="min-w-0 font-mono text-2xs break-all text-faint">{address.toLowerCase()}</p>
+        </div>
         <dl data-testid="wallet-balance" className="mt-2 flex flex-col gap-1 border-t pt-2 text-xs">
           <BalanceLine
             label="USDC available"

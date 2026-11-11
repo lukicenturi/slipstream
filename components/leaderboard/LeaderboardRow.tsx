@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { memo } from "react";
 
+import { Blockie } from "@/components/shared/Blockie";
 import { BookmarkButton } from "@/components/shared/BookmarkButton";
 import { signTone } from "@/components/shared/tone";
 import { useDisplayName } from "@/hooks/useNames";
@@ -33,14 +34,15 @@ export const LeaderboardRow = memo(function LeaderboardRow({
     <tr className="group h-9 border-b transition-colors hover:bg-surface-hover">
       <td className="w-8 px-1.5 font-mono text-xs text-muted-foreground sm:w-12 sm:px-3">{rank}</td>
       {/* Below sm the trader column takes the free width and truncates, so the row never overflows. */}
-      <td className="px-2 whitespace-nowrap max-sm:w-full max-sm:max-w-0 sm:px-3">
+      <td className="px-1.5 whitespace-nowrap max-sm:w-full max-sm:max-w-0 sm:px-3">
         <Link
           href={`/trader/${entry.address}`}
           prefetch={false}
-          className="block max-w-full truncate text-xs text-foreground hover:text-brand sm:max-w-[14rem]"
+          className="flex max-w-full items-center gap-1 text-xs text-foreground hover:text-brand sm:max-w-[14rem] sm:gap-1.5"
           title={entry.address}
         >
-          <span className={name.source === "address" ? "font-mono" : "font-medium"}>
+          <Blockie address={entry.address} />
+          <span className={cn("truncate", name.source === "address" ? "font-mono" : "font-medium")}>
             {name.label}
           </span>
         </Link>
@@ -49,7 +51,10 @@ export const LeaderboardRow = memo(function LeaderboardRow({
         <Usd value={entry.accountValue} />
       </td>
       <td
-        className={cn("px-2 text-right font-mono text-xs whitespace-nowrap sm:px-3", signTone(pnl))}
+        className={cn(
+          "px-1.5 text-right font-mono text-xs whitespace-nowrap sm:px-3",
+          signTone(pnl),
+        )}
       >
         <Usd value={pnl} signed />
       </td>

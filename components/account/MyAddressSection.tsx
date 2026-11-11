@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Blockie } from "@/components/shared/Blockie";
 import { AddressNameForm, type ResolvedInput } from "@/components/shared/AddressNameForm";
 import { TraderProfile } from "@/components/trader/TraderProfile";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,7 @@ export function MyAddressSection({ title }: { title: string }) {
           <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
             Saved
           </span>
+          <Blockie address={myAddress.address} />
           <span
             title={myAddress.address}
             className={cn(

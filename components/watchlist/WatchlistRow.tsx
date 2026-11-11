@@ -5,6 +5,7 @@ import Link from "next/link";
 import { memo, type ReactNode } from "react";
 
 import { RelativeTime } from "@/components/feed/RelativeTime";
+import { Blockie } from "@/components/shared/Blockie";
 import { signTone } from "@/components/shared/tone";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -150,12 +151,17 @@ export const WatchlistRow = memo(function WatchlistRow({
         href={`/trader/${address}`}
         prefetch={false}
         title={address}
-        className={cn(
-          "min-w-0 truncate rounded-sm text-foreground hover:text-brand",
-          name.source === "address" ? "font-mono" : "font-medium",
-        )}
+        className="flex min-w-0 items-center gap-2 rounded-sm text-foreground hover:text-brand"
       >
-        {name.label}
+        <Blockie address={address} size={20} />
+        <span
+          className={cn(
+            "min-w-0 truncate",
+            name.source === "address" ? "font-mono" : "font-medium",
+          )}
+        >
+          {name.label}
+        </span>
       </Link>
 
       {/* Numbers: a second line on mobile, their own columns from md up. */}

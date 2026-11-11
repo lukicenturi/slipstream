@@ -57,7 +57,7 @@ export function LeaderboardTable({ className }: { className?: string }) {
             <th scope="col" className="px-1.5 text-left font-normal sm:px-3">
               #
             </th>
-            <th scope="col" className="px-2 text-left font-normal sm:px-3">
+            <th scope="col" className="px-1.5 text-left font-normal sm:px-3">
               Trader
             </th>
             <SortableHeader
@@ -67,7 +67,13 @@ export function LeaderboardTable({ className }: { className?: string }) {
               onSort={onSort}
               className="hidden sm:table-cell"
             />
-            <SortableHeader label="PnL" sortKey="pnl" sort={sort} onSort={onSort} />
+            <SortableHeader
+              label="PnL"
+              sortKey="pnl"
+              sort={sort}
+              onSort={onSort}
+              className="pr-1.5 pl-1.5 sm:px-3"
+            />
             <SortableHeader
               label="ROI"
               sortKey="roi"

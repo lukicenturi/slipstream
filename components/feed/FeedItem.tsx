@@ -3,6 +3,7 @@ import { memo } from "react";
 
 import { CopyTradeButton } from "@/components/copy-trade/CopyTradeButton";
 import { AssetIcon } from "@/components/shared/AssetIcon";
+import { Blockie } from "@/components/shared/Blockie";
 import { BookmarkButton } from "@/components/shared/BookmarkButton";
 import { Side } from "@/components/shared/Side";
 import type { FeedItem as FeedItemData } from "@/lib/calc/aggregateFills";
@@ -52,12 +53,17 @@ export const FeedItem = memo(function FeedItem({
             href={`/trader/${item.user}`}
             prefetch={false}
             title={item.user}
-            className={cn(
-              "max-w-[8rem] shrink-0 truncate rounded-sm text-foreground hover:text-brand",
-              trader.source === "address" ? "font-mono" : "font-medium",
-            )}
+            className="inline-flex max-w-[8rem] shrink-0 items-center gap-1 rounded-sm text-foreground hover:text-brand sm:max-w-[9.25rem]"
           >
-            {trader.label}
+            <Blockie address={item.user} />
+            <span
+              className={cn(
+                "min-w-0 truncate",
+                trader.source === "address" ? "font-mono" : "font-medium",
+              )}
+            >
+              {trader.label}
+            </span>
           </Link>
           {/*
             The phrase truncates first (shrink factor 1000). Only when the phrase is

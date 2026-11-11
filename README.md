@@ -41,6 +41,7 @@ The previous address, https://slipstream-alpha.vercel.app, still works. A link i
 - **Network switch.** A small pill in the header shows the network of this deployment (`MAINNET` in grey or `TESTNET` in amber) and links to the other deployment. It keeps the current page when the other deployment has it. The footer has the same link. In the testnet build, the leaderboard and feed subtitles also say "Testnet".
 - **Navigation.** Desktop nav links (Leaderboard, Live, Watchlist, Account) in the header and a mobile bottom tab bar with the same four destinations. `Live` is active on `/?view=live` at every width.
 - **Asset icons.** Coin names in the feed, the positions table, the fills list and the sheet have a 16 px icon (24 px in the sheet). Icons come from `app.hyperliquid.xyz/coins/<COIN>.svg`. A coin without an icon (other perp DEXs such as `xyz:NVDA`, spot ids such as `@107`, or a failed image) shows a 2-letter monogram in the same box, so rows keep their height.
+- **Blockies identicons for every address, the same algorithm as MetaMask and Etherscan.** Each trader address in the leaderboard, the feed, the profile header, the watchlist, the watching chips, the bell, the account page and the wallet button has a small identicon. `lib/blockies.ts` implements the ethereum/blockies algorithm without a dependency, and `components/shared/Blockie.tsx` draws it as an inline SVG.
 
 ## Architecture
 

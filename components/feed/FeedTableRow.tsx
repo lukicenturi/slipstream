@@ -5,6 +5,7 @@ import { memo } from "react";
 
 import { CopyTradeButton } from "@/components/copy-trade/CopyTradeButton";
 import { AssetIcon } from "@/components/shared/AssetIcon";
+import { Blockie } from "@/components/shared/Blockie";
 import { BookmarkButton } from "@/components/shared/BookmarkButton";
 import { Side } from "@/components/shared/Side";
 import { signTone } from "@/components/shared/tone";
@@ -57,12 +58,17 @@ export const FeedTableRow = memo(function FeedTableRow({
           href={`/trader/${item.user}`}
           prefetch={false}
           title={item.user}
-          className={cn(
-            "block truncate rounded-sm text-foreground hover:text-brand",
-            trader.source === "address" ? "font-mono" : "font-medium",
-          )}
+          className="flex min-w-0 items-center gap-1.5 rounded-sm text-foreground hover:text-brand"
         >
-          {trader.label}
+          <Blockie address={item.user} />
+          <span
+            className={cn(
+              "min-w-0 truncate",
+              trader.source === "address" ? "font-mono" : "font-medium",
+            )}
+          >
+            {trader.label}
+          </span>
         </Link>
       </td>
       <td className="max-w-0 px-3 text-xs">

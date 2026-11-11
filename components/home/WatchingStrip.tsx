@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { Blockie } from "@/components/shared/Blockie";
 import { useDisplayName } from "@/hooks/useNames";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { cn } from "@/lib/utils";
@@ -45,11 +46,12 @@ function WatchingChip({ address }: { address: string }) {
         prefetch={false}
         title={address}
         className={cn(
-          "inline-flex h-6 max-w-[10rem] items-center rounded-sm border px-2 text-2xs text-foreground transition-colors hover:border-border-strong hover:text-brand",
+          "inline-flex h-6 max-w-[10rem] items-center gap-1.5 rounded-sm border pr-2 pl-1 text-2xs text-foreground transition-colors hover:border-border-strong hover:text-brand",
           name.source === "address" ? "font-mono" : "font-medium",
         )}
       >
-        <span className="truncate">{name.label}</span>
+        <Blockie address={address} />
+        <span className="min-w-0 truncate">{name.label}</span>
       </Link>
     </li>
   );

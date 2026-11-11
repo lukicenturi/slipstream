@@ -3,6 +3,7 @@
 import { ArrowUpRightIcon, CopyIcon, ExternalLinkIcon, WalletIcon } from "lucide-react";
 import { useConnection } from "wagmi";
 
+import { Blockie } from "@/components/shared/Blockie";
 import { Stat, STAT_GRID, StatNote, StatValue } from "@/components/shared/Stat";
 import { EmptyState, ErrorState, SkeletonRows } from "@/components/shared/States";
 import { signTone } from "@/components/shared/tone";
@@ -87,40 +88,43 @@ function ConnectedAccount({ address }: { address: string }) {
       className="flex flex-col gap-3"
     >
       <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-        <div className="min-w-0 flex-1">
-          <h2 id="testnet-account-title" className="text-sm font-semibold text-foreground">
-            My testnet account
-          </h2>
-          <div className="flex min-w-0 items-center gap-1">
-            <span
-              data-testid="testnet-account-address"
-              title={address}
-              className="truncate font-mono text-xs text-muted-foreground"
-            >
-              <span className="md:hidden">{shortAddress(address)}</span>
-              <span className="hidden md:inline">{address}</span>
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Copy address"
-              onClick={() => void copyAddress(address)}
-            >
-              <CopyIcon aria-hidden="true" />
-            </Button>
-            <Button asChild variant="ghost" size="icon-xs">
-              <a
-                href={explorerAddressUrl(address)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Open in the ${HL.explorerLabel}`}
-                title={HL.explorerLabel}
-                data-testid="testnet-explorer-link"
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <Blockie address={address} size={32} />
+          <div className="min-w-0 flex-1">
+            <h2 id="testnet-account-title" className="text-sm font-semibold text-foreground">
+              My testnet account
+            </h2>
+            <div className="flex min-w-0 items-center gap-1">
+              <span
+                data-testid="testnet-account-address"
+                title={address}
+                className="truncate font-mono text-xs text-muted-foreground"
               >
-                <ExternalLinkIcon aria-hidden="true" />
-              </a>
-            </Button>
+                <span className="md:hidden">{shortAddress(address)}</span>
+                <span className="hidden md:inline">{address}</span>
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Copy address"
+                onClick={() => void copyAddress(address)}
+              >
+                <CopyIcon aria-hidden="true" />
+              </Button>
+              <Button asChild variant="ghost" size="icon-xs">
+                <a
+                  href={explorerAddressUrl(address)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open in the ${HL.explorerLabel}`}
+                  title={HL.explorerLabel}
+                  data-testid="testnet-explorer-link"
+                >
+                  <ExternalLinkIcon aria-hidden="true" />
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
         <Button asChild variant="outline" size="sm">

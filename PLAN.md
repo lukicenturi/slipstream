@@ -196,6 +196,16 @@ In-tab alerts fire while a Slipstream tab is open. Phase 5a adds Web Push for th
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass, `pnpm build` passes with no variable, `NEXT_PUBLIC_TRADING_MODE=testnet` and `NEXT_PUBLIC_NETWORK=testnet`, and the headless browser checks show only mainnet hosts without a variable and only testnet hosts (plus icons) with the testnet flag.
 
+## Phase 4h: blockies
+
+- [x] `lib/blockies.ts`: the ethereum/blockies algorithm (int32 PRNG, colours, mirrored 8 x 8 grid), `blockieData`, `blockieRuns`, `blockieSvg`, `blockieDataUri`; no dependency
+- [x] Vitest tests: determinism, mirrored rows, run merge, SVG cells, and an exact match with `fixtures/blockies-reference.json` (3 addresses, made with `ethereum-blockies-base64`)
+- [x] `components/shared/Blockie.tsx`: inline SVG, `React.memo` and `useMemo`, `aria-hidden`, 1 px border, 2 px radius up to 24 px, lower-cases the address
+- [x] Placed in the leaderboard, the feed (list and table), the profile header, the watchlist, the watching chips, the bell, the account page and the wallet button
+- [x] README, DECISIONS and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` pass, every leaderboard and feed row shows a blockie with unchanged row heights, a rendered blockie matches the reference data, and 375 px has no horizontal scroll.
+
 ## Phase 5a: push alerts
 
 Alerts reach the user when no Slipstream tab is open. A Cloudflare Worker (`workers/push/`) with a D1 store polls the tracked addresses once a minute and sends Web Push messages; the app's service worker shows them. Free tiers only.
