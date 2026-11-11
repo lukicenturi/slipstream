@@ -70,14 +70,14 @@ Borrow layout, density and interaction patterns only. Do not copy logos, brand n
 
 ## Phase 1: foundation (2–3 h)
 
-- [ ] Review all images in `screenshots/` and write the design tokens (colours, type scale, spacing, radius) into the Tailwind theme before building any screen
-- [ ] Scaffold Next.js with TypeScript strict, ESLint, Prettier, Tailwind, shadcn/ui, dark theme
-- [ ] Capture sample responses for all five data sources into `fixtures/`
-- [ ] `lib/hyperliquid/schemas.ts`: zod schemas and inferred types
-- [ ] `lib/hyperliquid/client.ts`: `getLeaderboard`, `getClearinghouseState`, `getUserFills`, `getPortfolio`
-- [ ] `app/api/leaderboard/route.ts`: fetch, trim to top 100, cache (revalidate 600–900 s)
-- [ ] `lib/hyperliquid/ws.ts` + `useHyperliquidWs` hook: shared connection, subscribe/unsubscribe by key, reconnect with exponential backoff, resubscribe after reconnect
-- [ ] `lib/format.ts`: USD, percent, size, short address, relative time
+- [x] Review all images in `screenshots/` and write the design tokens (colours, type scale, spacing, radius) into the Tailwind theme before building any screen
+- [x] Scaffold Next.js with TypeScript strict, ESLint, Prettier, Tailwind, shadcn/ui, dark theme
+- [x] Capture sample responses for all five data sources into `fixtures/`
+- [x] `lib/hyperliquid/schemas.ts`: zod schemas and inferred types
+- [x] `lib/hyperliquid/client.ts`: `getLeaderboard`, `getClearinghouseState`, `getUserFills`, `getPortfolio`
+- [x] `app/api/leaderboard/route.ts`: fetch, trim to top 100, cache (revalidate 600–900 s)
+- [x] `lib/hyperliquid/ws.ts` + `useHyperliquidWs` hook: shared connection, subscribe/unsubscribe by key, reconnect with exponential backoff, resubscribe after reconnect
+- [x] `lib/format.ts`: USD, percent, size, short address, relative time
 
 **Done when:** a throwaway page prints the top 10 traders and a live BTC mid price.
 

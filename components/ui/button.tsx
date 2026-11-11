@@ -1,7 +1,7 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
-import { Slot } from "radix-ui"
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "cn";
+import { Slot } from "radix-ui";
 
 // Restyled for Slipstream: 4 px radius, 1 px borders, 32 px default height,
 // 12 to 13 px text, no shadows, and a 1 px accent outline on focus.
@@ -17,8 +17,7 @@ const buttonVariants = cva(
           "border-border bg-surface text-foreground hover:bg-surface-hover aria-expanded:bg-surface-hover",
         ghost:
           "text-muted-foreground hover:bg-surface-hover hover:text-foreground aria-expanded:bg-surface-hover aria-expanded:text-foreground",
-        destructive:
-          "border-short/40 bg-short-dim text-short hover:border-short/60",
+        destructive: "border-short/40 bg-short-dim text-short hover:border-short/60",
         link: "h-auto px-0 text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -36,8 +35,8 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 
 function Button({
   className,
@@ -47,9 +46,9 @@ function Button({
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
+    asChild?: boolean;
   }) {
-  const Comp = asChild ? Slot.Root : "button"
+  const Comp = asChild ? Slot.Root : "button";
 
   return (
     <Comp
@@ -59,7 +58,7 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
-  )
+  );
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

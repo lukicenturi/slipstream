@@ -1,4 +1,4 @@
-import { cn } from "cn"
+import { cn } from "cn";
 
 // Restyled for Slipstream: 2 px radius on the surface hover colour.
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
@@ -8,7 +8,7 @@ function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("animate-pulse rounded-sm bg-surface-hover", className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Skeleton }
+export { Skeleton };
