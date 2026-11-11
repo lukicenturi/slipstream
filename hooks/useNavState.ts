@@ -1,0 +1,25 @@
+"use client";
+
+import { usePathname, useSearchParams } from "next/navigation";
+
+import { activeNavKey, parseHomeView, type HomeView, type NavKey } from "@/lib/nav";
+
+/*
+ * URL state for the primary navigation. Both hooks read request data
+ * (the pathname and the search params). With cacheComponents on, a
+ * component that calls them must render inside a <Suspense> boundary,
+ * or the prerender of routes such as /trader/[address] fails.
+ */
+
+/** The active nav item. Pass `isDesktop` from the component's own breakpoint. */
+export function useActiveNavKey(isDesktop: boolean): NavKey | null {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return activeNavKey(pathname, searchParams.get("view"), isDesktop);
+}
+
+/** The mobile view of the home page, from `?view=`. */
+export function useHomeView(): HomeView {
+  const searchParams = useSearchParams();
+  return parseHomeView(searchParams.get("view"));
+}

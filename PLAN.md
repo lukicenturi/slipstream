@@ -5,7 +5,7 @@
 A read-only "follow the smart money" web app: leaderboard, live trade feed, trader profiles, and a mocked copy-trade sheet. Built as a portfolio piece for Arbital (onchain social trading; React, TypeScript, React Native).
 
 - **Budget:** about 2 days. Hard cutoff after Phase 4. Phase 5 is a bonus.
-- **Rule:** read-only. No wallet connection, no order placement, no database.
+- **Rule:** production is read-only. Trading exists only on Hyperliquid testnet behind `NEXT_PUBLIC_TRADING_MODE=testnet`. Never create a mainnet exchange client. Never ask for or store a user's wallet key; only a generated agent key may be stored, in localStorage, for testnet. No database.
 
 ## Stack
 
@@ -119,6 +119,50 @@ Route: `/trader/[address]`
 - [x] Footer disclaimer: unofficial, read-only, not financial advice
 
 **Done when:** live URL works on mobile and the README explains every major decision.
+
+## Phase 4b: testnet trading and asset icons
+
+The user relaxed the read-only rule for testnet only (2026-11-11, see DECISIONS.md). Production stays read-only.
+
+- [x] `lib/trading/config.ts`: trading mode from `NEXT_PUBLIC_TRADING_MODE`, a tested guard that throws unless the mode is `testnet`
+- [x] Testnet info reads: `getMeta`, `getAllMidsOnce`, `getClearinghouseState` with a base URL; testnet fixtures and a meta schema test
+- [x] Pure order logic in `lib/trading/order.ts`: asset lookup, price and size rounding, IOC order, status summary, leverage update rule (tested)
+- [x] Agent key in `lib/trading/agent.ts`: generate, store per owner on testnet, parse with zod, forget (tested)
+- [x] `lib/trading/exchange.ts`: approveAgent, updateLeverage and IOC order through `HttpTransport({ isTestnet: true })` only; error mapping (tested)
+- [x] wagmi (injected, optional WalletConnect), header wallet button, `useTradingSession`
+- [x] Sheet in testnet mode: Testnet badge, 3 steps (wallet, agent, order), testnet mid, balance, disabled reasons, result row, forget agent
+- [x] Asset icons with a monogram fallback in the feed, positions, fills and the sheet
+- [x] README, DECISIONS and footer updated
+- [ ] A real fill on testnet with a funded wallet (manual steps in the README)
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass, `pnpm build` passes with and without the flag, and the headless browser checks pass in both modes.
+
+## Phase 4c: watchlist and alerts
+
+No server push: the app has no database. Alerts fire only while a Slipstream tab is open (see DECISIONS.md).
+
+- [x] `lib/alerts.ts` and `lib/notifications.ts`: settings, notices, `shouldNotify`, `noticeText`, `collapseBurst` (tested)
+- [x] Stores for alert settings and notices in localStorage (zod, try/catch, 50 notices); the `slipstream.watchlist` format stays
+- [x] One global `WatchlistTracker` on the shared socket; snapshot items never notify
+- [x] Star toggle on leaderboard rows and feed rows; the profile keeps "Follow"
+- [x] Header: Watchlist link with a count, notification bell with unread list and settings (toasts, browser notifications, minimum size)
+- [x] Toasts with burst collapsing; browser notifications only when permitted and the tab is hidden
+- [x] `/watchlist` page: add by address, `.eth` or `.hl`; account value, live uPnL, positions, last trade, alert switch, remove; loading, empty and error states
+- [x] README and DECISIONS updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` pass, and the headless browser checks (stars, watchlist page, live notice, browser notification stub, 375 px) pass.
+
+## Phase 4d: navigation
+
+- [x] `lib/nav.ts`: nav items, `activeNavKey`, `parseHomeView`, `navCountBadge` (tested)
+- [x] Desktop header nav (Leaderboard, Live, Watchlist) with an active state and the watchlist count
+- [x] Mobile bottom tab bar (56 px plus the safe-area inset) with icons, labels, an active state and the watchlist badge
+- [x] Home view from the URL (`/` and `/?view=live`); in-page tabs removed; both panels stay mounted
+- [x] Suspense boundaries with fallbacks for every component that reads the URL; `pnpm build` prerenders as before
+- [x] Space for the bar below `lg` (body padding, `viewport-fit=cover`); the sheet and the toasts render above it
+- [x] README and DECISIONS updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` pass, and the headless browser checks at 1280 px and 375 px (active states, URL, mounted panels, nothing under the bar, sheet above the bar, keyboard) pass.
 
 ## Phase 5 (bonus): Expo app (4–6 h)
 

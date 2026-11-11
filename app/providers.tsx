@@ -5,6 +5,8 @@ import { useState, type ReactNode } from "react";
 
 import { CopyTradeProvider } from "@/components/copy-trade/CopyTradeProvider";
 import { MidsFeeder } from "@/components/providers/MidsFeeder";
+import { WatchlistTracker } from "@/components/providers/WatchlistTracker";
+import { TradingProviders } from "@/components/trading/TradingProviders";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -20,11 +22,23 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <MidsFeeder />
-        <CopyTradeProvider>{children}</CopyTradeProvider>
-        <Toaster position="bottom-center" />
-      </TooltipProvider>
+      {/* wagmi in a testnet build; nothing in the read-only build. */}
+      <TradingProviders>
+        <TooltipProvider>
+          <MidsFeeder />
+          <CopyTradeProvider>
+            {/* Live alerts for followed traders, on every page. */}
+            <WatchlistTracker />
+            {children}
+          </CopyTradeProvider>
+          {/* Toasts sit above the mobile bottom bar (the variable is 0 from lg up). */}
+          <Toaster
+            position="bottom-center"
+            offset={{ bottom: "calc(24px + var(--bottom-nav-space))" }}
+            mobileOffset={{ bottom: "calc(16px + var(--bottom-nav-space))" }}
+          />
+        </TooltipProvider>
+      </TradingProviders>
     </QueryClientProvider>
   );
 }

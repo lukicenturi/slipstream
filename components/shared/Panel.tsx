@@ -4,10 +4,11 @@ import { cn } from "@/lib/utils";
 
 /**
  * A bordered panel with a 40 px header row. The body scrolls on desktop.
- * By default the title is visually hidden below `lg`, because the home
- * page shows the same words in its tab bar. Set `titleOnMobile` to show it.
+ * By default the title is visually hidden below `lg`, because the mobile
+ * bottom tab bar shows the same words. Set `titleOnMobile` to show it.
  * Set `focusableBody` when the body can scroll but holds no focusable
- * element, so keyboard users can still scroll it.
+ * element, so keyboard users can still scroll it. Set `focusableTitle` so
+ * that a script can move focus to the title (tab index -1).
  */
 export function Panel({
   title,
@@ -18,6 +19,7 @@ export function Panel({
   className,
   titleOnMobile = false,
   focusableBody = false,
+  focusableTitle = false,
 }: {
   title: string;
   titleId: string;
@@ -27,6 +29,7 @@ export function Panel({
   className?: string;
   titleOnMobile?: boolean;
   focusableBody?: boolean;
+  focusableTitle?: boolean;
 }) {
   return (
     <section
@@ -39,9 +42,12 @@ export function Panel({
       <header className="flex h-10 shrink-0 items-center gap-2 border-b px-3">
         <h2
           id={titleId}
+          tabIndex={focusableTitle ? -1 : undefined}
           className={cn(
             "text-sm font-semibold text-foreground",
             !titleOnMobile && "max-lg:sr-only",
+            focusableTitle &&
+              "rounded-sm focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ring",
           )}
         >
           {title}

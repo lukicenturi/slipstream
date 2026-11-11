@@ -65,6 +65,7 @@ export function LiveFeed({ className }: { className?: string }) {
     <Panel
       title="Live trades"
       titleId="live-title"
+      focusableTitle
       meta={traderCount > 0 ? `Top ${traderCount} traders` : null}
       actions={
         items.length > 0 ? (

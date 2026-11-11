@@ -65,6 +65,16 @@
   --sidebar-ring: var(--ss-accent);
 
   --radius: 4px;
+
+  /* Height of the mobile bottom tab bar, plus the iPhone home indicator. */
+  --bottom-nav-space: calc(3.5rem + env(safe-area-inset-bottom));
+}
+
+/* From lg up there is no bottom bar. 64rem is the Tailwind lg breakpoint. */
+@media (width >= 64rem) {
+  :root {
+    --bottom-nav-space: 0px;
+  }
 }
 
 /* The same values apply under .dark, which is always set on <html>. */
