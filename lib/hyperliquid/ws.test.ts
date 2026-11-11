@@ -122,8 +122,11 @@ describe("HyperliquidSocket", () => {
     client.subscribe({ type: "userFills", user: USER }, fills);
     last().open();
 
-    last().receive({ channel: "allMids", data: { mids: { BTC: "100", "@1": "2" } } });
-    expect(mids).toHaveBeenCalledWith({ channel: "allMids", mids: { BTC: 100 } });
+    last().receive({
+      channel: "allMids",
+      data: { mids: { BTC: "100", "@1": "2", "#114910": "0.5" } },
+    });
+    expect(mids).toHaveBeenCalledWith({ channel: "allMids", mids: { BTC: 100, "@1": 2 } });
 
     last().receive({ channel: "userFills", data: { user: USER.toLowerCase(), fills: [fill] } });
     expect(fills).toHaveBeenCalledTimes(1);

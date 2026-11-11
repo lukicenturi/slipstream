@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatAmount,
   formatClockTime,
   formatClosedPnl,
   formatDuration,
@@ -64,6 +65,24 @@ describe("formatPrice", () => {
     expect(formatPrice(0)).toBe("0");
     expect(formatPrice(-2.5)).toBe("-2.50");
     expect(formatPrice(Number.NaN)).toBe("—");
+  });
+});
+
+describe("formatAmount", () => {
+  it("keeps at most the given decimals and drops trailing zeros", () => {
+    expect(formatAmount(244.36306387, 2)).toBe("244.36");
+    expect(formatAmount(10000, 2)).toBe("10,000");
+    expect(formatAmount(3436.2971518, 0)).toBe("3,436");
+    expect(formatAmount(0.7968, 2)).toBe("0.8");
+    expect(formatAmount(0.7968, 2, 2)).toBe("0.80");
+    expect(formatAmount(67.728746, 2, 2)).toBe("67.73");
+  });
+
+  it("clamps the decimals and handles bad input", () => {
+    expect(formatAmount(1.123456789, 12)).toBe("1.12345679");
+    expect(formatAmount(1.5, -1)).toBe("2");
+    expect(formatAmount(Number.NaN, 2)).toBe("—");
+    expect(formatAmount(-0.001, 2)).toBe("0");
   });
 });
 

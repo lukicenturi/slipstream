@@ -4,10 +4,13 @@ import { memo } from "react";
 
 import { CopyTradeButton } from "@/components/copy-trade/CopyTradeButton";
 import { AssetIcon } from "@/components/shared/AssetIcon";
+import { DexBadge } from "@/components/shared/DexBadge";
 import { Price } from "@/components/shared/Price";
 import { Side } from "@/components/shared/Side";
 import { signTone } from "@/components/shared/tone";
+import { Button } from "@/components/ui/button";
 import { useMid } from "@/hooks/useMid";
+import { displaySymbol } from "@/lib/assets";
 import { returnOnEquity, unrealizedPnl } from "@/lib/calc/positions";
 import { EMPTY_VALUE, formatPercent, formatPrice, formatSize, formatUsd } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid/schemas";
@@ -22,9 +25,12 @@ const CELL = "px-3 text-right font-mono text-xs whitespace-nowrap";
  */
 export const PositionRow = memo(function PositionRow({
   position,
+  dex = null,
   showCopy = true,
 }: {
   position: Position;
+  /** The builder exchange of the position, or null for the main exchange. */
+  dex?: string | null;
   /** False on the account page: it shows your own positions and only reads. */
   showCopy?: boolean;
 }) {
@@ -46,9 +52,10 @@ export const PositionRow = memo(function PositionRow({
         scope="row"
         className="sticky left-0 z-[1] bg-background px-3 text-left text-xs font-medium whitespace-nowrap text-foreground transition-colors group-hover:bg-surface-hover max-md:border-r"
       >
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1.5" title={position.coin}>
           <AssetIcon coin={position.coin} />
-          {position.coin}
+          {displaySymbol(position.coin)}
+          {dex ? <DexBadge dex={dex} /> : null}
         </span>
       </th>
       <td className="px-3">
@@ -79,13 +86,30 @@ export const PositionRow = memo(function PositionRow({
       </td>
       {showCopy ? (
         <td className="px-3 text-right">
-          <CopyTradeButton
-            coin={position.coin}
-            side={position.side}
-            fallbackMarkPx={apiMark}
-            maxLeverage={position.maxLeverage}
-            leverage={position.leverage}
-          />
+          {dex ? (
+            // The sheet places orders on the main exchange only. A disabled button
+            // gets no pointer events, so the wrapper carries the tooltip.
+            <span title="Builder exchange, not supported" className="inline-flex">
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                disabled
+                aria-label={`Copy ${displaySymbol(position.coin)}: builder exchange, not supported`}
+                data-testid="copy-trade-button-disabled"
+              >
+                Copy
+              </Button>
+            </span>
+          ) : (
+            <CopyTradeButton
+              coin={position.coin}
+              side={position.side}
+              fallbackMarkPx={apiMark}
+              maxLeverage={position.maxLeverage}
+              leverage={position.leverage}
+            />
+          )}
         </td>
       ) : null}
     </tr>

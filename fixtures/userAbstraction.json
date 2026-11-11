@@ -1,0 +1,5 @@
+{
+  "mainnet 0x5b5d51203a0f9079f8aeb098a6523a13f298c060": "unifiedAccount",
+  "mainnet 0xf5d81a135f756ca16544e53c20fc20643ec3ad53": "disabled",
+  "testnet 0x9dbe4eb4a0a41955e1dc733e322f84295a0aa5c0": "default"
+}

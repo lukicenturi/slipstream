@@ -300,22 +300,26 @@ export const portfolioSchema = z
 // WebSocket: the socket of the network (HL.wsUrl in lib/network.ts)
 // ---------------------------------------------------------------------------
 
-/** Spot markets start with "@" and builder markets with "#". We keep perps only. */
-export function isPerpCoin(coin: string): boolean {
-  return !coin.startsWith("@") && !coin.startsWith("#");
+/**
+ * Keys that start with "#" are builder markets that the app does not use.
+ * Spot pair keys ("@1382", "PURR/USDC") stay: the Balances panel prices
+ * spot tokens with them.
+ */
+function isDroppedMidKey(coin: string): boolean {
+  return coin.startsWith("#");
 }
 
 export interface AllMidsMessage {
   channel: "allMids";
-  /** Perp coin to mid price. Spot and builder keys are dropped. */
+  /** Perp coin or spot pair to mid price. Builder ("#") keys are dropped. */
   mids: Record<string, number>;
 }
 
-/** Keep perp coins with a finite mid. One bad value is skipped, not the whole map. */
+/** Keep perp and spot keys with a finite mid. One bad value is skipped, not the whole map. */
 function parseMidsRecord(raw: Record<string, string>): Record<string, number> {
   const mids: Record<string, number> = {};
   for (const [coin, text] of Object.entries(raw)) {
-    if (!isPerpCoin(coin)) continue;
+    if (isDroppedMidKey(coin)) continue;
     const value = Number(text);
     if (text.trim() !== "" && Number.isFinite(value)) mids[coin] = value;
   }
@@ -446,3 +450,175 @@ export const metaSchema = z
       isDelisted: asset.isDelisted === true,
     })),
   );
+
+// ---------------------------------------------------------------------------
+// Info: {"type":"perpDexs"} (fixtures/perpDexs.json)
+// ---------------------------------------------------------------------------
+
+/** A builder-deployed perp exchange (HIP-3), for example "vntls" on testnet. */
+export interface PerpDex {
+  name: string;
+  fullName: string | null;
+}
+
+/**
+ * The first entry is null: it stands for the main perp exchange, which the
+ * app reads without a `dex`. The other entries are builder exchanges.
+ */
+export const perpDexsSchema = z
+  .array(
+    z.object({ name: z.string().min(1), fullName: z.string().nullable().optional() }).nullable(),
+  )
+  .transform((entries): PerpDex[] =>
+    entries.flatMap((entry) =>
+      entry === null ? [] : [{ name: entry.name, fullName: entry.fullName ?? null }],
+    ),
+  );
+
+// ---------------------------------------------------------------------------
+// Info: {"type":"spotClearinghouseState","user":"0x..."}
+// (fixtures/spotClearinghouseState.json)
+// ---------------------------------------------------------------------------
+
+export interface SpotBalance {
+  /** The token name, for example "USDC" or "HARRR". */
+  coin: string;
+  /** The token index in spotMeta. */
+  token: number;
+  total: number;
+  /** The part of the total that open orders hold. */
+  hold: number;
+  /** The USDC cost of the balance (entry notional). */
+  entryNtl: number;
+}
+
+export const spotClearinghouseStateSchema = z
+  .object({
+    balances: z.array(
+      z.object({
+        coin: z.string().min(1),
+        token: z.number().int().min(0),
+        total: numericString,
+        hold: numericString,
+        entryNtl: numericString,
+      }),
+    ),
+  })
+  .transform((state): SpotBalance[] => state.balances);
+
+// ---------------------------------------------------------------------------
+// Info: {"type":"userNonFundingLedgerUpdates","user":"0x...","startTime":0}
+// (fixtures/ledgerUpdates.json)
+// ---------------------------------------------------------------------------
+
+/**
+ * The part of a ledger update that tells which perp exchange took part in
+ * a transfer. Only `send` deltas carry `sourceDex` / `destinationDex`; ""
+ * is the main perp exchange and "spot" is the spot account.
+ */
+export interface LedgerDexMove {
+  /** The sender. */
+  user: string | null;
+  /** The receiver. */
+  destination: string | null;
+  sourceDex: string | null;
+  destinationDex: string | null;
+}
+
+const ledgerDeltaSchema = z.object({
+  delta: z.object({
+    user: z
+      .string()
+      .transform((value) => value.toLowerCase())
+      .optional(),
+    destination: z
+      .string()
+      .transform((value) => value.toLowerCase())
+      .optional(),
+    sourceDex: z.string().optional(),
+    destinationDex: z.string().optional(),
+  }),
+});
+
+/**
+ * Tolerant on purpose: the deltas have many shapes. An entry that does not
+ * match is skipped, and only entries with a dex field are kept.
+ */
+export const ledgerDexMovesSchema = z.array(z.unknown()).transform((entries): LedgerDexMove[] => {
+  const moves: LedgerDexMove[] = [];
+  for (const entry of entries) {
+    const parsed = ledgerDeltaSchema.safeParse(entry);
+    if (!parsed.success) continue;
+    const { user, destination, sourceDex, destinationDex } = parsed.data.delta;
+    if (sourceDex === undefined && destinationDex === undefined) continue;
+    moves.push({
+      user: user ?? null,
+      destination: destination ?? null,
+      sourceDex: sourceDex ?? null,
+      destinationDex: destinationDex ?? null,
+    });
+  }
+  return moves;
+});
+
+// ---------------------------------------------------------------------------
+// Info: {"type":"spotMeta"} (server only; fixtures/spotMeta.json)
+// ---------------------------------------------------------------------------
+
+/** The raw spot metadata. Only the fields that the token map needs are kept. */
+export const spotMetaSchema = z.object({
+  tokens: z.array(
+    z.object({
+      name: z.string().min(1),
+      index: z.number().int().min(0),
+      szDecimals: z.number().int().min(0),
+    }),
+  ),
+  universe: z.array(
+    z.object({
+      name: z.string().min(1),
+      index: z.number().int().min(0),
+      tokens: z.tuple([z.number().int().min(0), z.number().int().min(0)]),
+      isCanonical: z.boolean().optional(),
+    }),
+  ),
+});
+export type SpotMeta = z.infer<typeof spotMetaSchema>;
+
+// ---------------------------------------------------------------------------
+// GET /api/spot-meta: the trimmed token map that the browser reads
+// ---------------------------------------------------------------------------
+
+export const spotTokenSchema = z.object({
+  index: z.number().int().min(0),
+  szDecimals: z.number().int().min(0),
+  /** The allMids key of the token's USDC pair ("@1382", "PURR/USDC"), or null. */
+  pair: z.string().min(1).nullable(),
+});
+export type SpotToken = z.infer<typeof spotTokenSchema>;
+
+export const spotTokenMapSchema = z.object({
+  updatedAt: z.number(),
+  tokens: z.record(z.string(), spotTokenSchema),
+});
+export type SpotTokenMap = z.infer<typeof spotTokenMapSchema>;
+
+// ---------------------------------------------------------------------------
+// Info: {"type":"userAbstraction","user":"0x..."} (fixtures/userAbstraction.json)
+// ---------------------------------------------------------------------------
+
+/**
+ * The account mode: "default", "disabled", "unifiedAccount" or
+ * "portfolioMargin". Any other string is kept, so a new mode does not fail.
+ */
+export const userAbstractionSchema = z.string().min(1);
+export type UserAbstraction = z.infer<typeof userAbstractionSchema>;
+
+/**
+ * In a unified or portfolio margin account the perp margin is part of the
+ * spot USDC balance (its `hold`), so perp account values must not be added
+ * on top of spot.
+ */
+export function isUnifiedAbstraction(mode: UserAbstraction | undefined): boolean {
+  return mode === "unifiedAccount" || mode === "portfolioMargin";
+}

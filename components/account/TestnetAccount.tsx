@@ -1,8 +1,12 @@
 "use client";
 
 import { ArrowUpRightIcon, CopyIcon, ExternalLinkIcon, WalletIcon } from "lucide-react";
+import { useMemo } from "react";
 import { useConnection } from "wagmi";
 
+import { AccountValueStat } from "@/components/account/AccountValueStat";
+import { BalancesPanel } from "@/components/account/BalancesPanel";
+import { BuilderUsdcNote } from "@/components/account/BuilderUsdcNote";
 import { Blockie } from "@/components/shared/Blockie";
 import { Stat, STAT_GRID, StatNote, StatValue } from "@/components/shared/Stat";
 import { EmptyState, ErrorState, SkeletonRows } from "@/components/shared/States";
@@ -12,11 +16,17 @@ import { RecentFills } from "@/components/trader/RecentFills";
 import { copyAddress } from "@/components/trader/TraderHeader";
 import { ConnectWalletPopover } from "@/components/trading/ConnectWallet";
 import { Button } from "@/components/ui/button";
+import { isLoadingBalances, useAccountBalances } from "@/hooks/useAccountBalances";
 import { useLiveUnrealizedPnl } from "@/hooks/useLiveUnrealizedPnl";
 import { useTraderFills, useTraderState } from "@/hooks/useTrader";
+import {
+  builderDexWithUsdc,
+  collectPositions,
+  perpAccounts,
+  type AccountPosition,
+} from "@/lib/calc/balances";
 import { DUST_ACCOUNT_VALUE } from "@/lib/calc/positions";
 import { formatUsd, shortAddress } from "@/lib/format";
-import type { ClearinghouseState } from "@/lib/hyperliquid/schemas";
 import { explorerAddressUrl, HL } from "@/lib/network";
 import { NETWORK_URLS, TESTNET } from "@/lib/trading/config";
 
@@ -27,7 +37,8 @@ const FILLS_REFRESH_MS = 30_000;
  * The connected wallet's testnet account (testnet build only; it needs
  * wagmi, so it loads lazily). It uses the same queries as the profile at
  * /trader/<address> and the prices of the shared socket, so both pages show
- * the same numbers. It only reads: the info endpoint, never the exchange.
+ * the same numbers, including builder perp exchanges and spot. It only
+ * reads: the info endpoint, never the exchange.
  */
 export default function TestnetAccount() {
   const connection = useConnection();
@@ -78,8 +89,23 @@ function ConnectPrompt() {
 function ConnectedAccount({ address }: { address: string }) {
   const account = useTraderState(address, { refetchInterval: ACCOUNT_REFRESH_MS });
   const fills = useTraderFills(address, { refetchInterval: FILLS_REFRESH_MS });
+  const balances = useAccountBalances(address);
   const state = account.data;
   const pending = account.status === "pending";
+  const { dexStates } = balances;
+  const positions = useMemo(() => collectPositions(state, dexStates), [state, dexStates]);
+  const accounts = perpAccounts(state, dexStates);
+  const builderUsdc = builderDexWithUsdc(accounts);
+  const perpsUsd = accounts.reduce((sum, entry) => sum + entry.accountValue, 0);
+  const marginUsed = accounts.reduce((sum, entry) => sum + entry.marginUsed, 0);
+  const hasSpot = (balances.spot.data ?? []).some((balance) => balance.total > 0);
+  // Orders use the main perps USDC only.
+  const showTransferNote = state !== undefined && state.withdrawable < 0.01 && builderUsdc !== null;
+  const showNoFunds =
+    state !== undefined &&
+    !isLoadingBalances(balances) &&
+    perpsUsd < DUST_ACCOUNT_VALUE &&
+    !hasSpot;
 
   return (
     <section
@@ -145,40 +171,47 @@ function ConnectedAccount({ address }: { address: string }) {
         </div>
       ) : (
         <dl data-testid="testnet-stats" className={STAT_GRID}>
-          <Stat label="Account value" loading={pending}>
-            {state ? (
-              <>
-                <StatValue>{formatUsd(state.accountValue)}</StatValue>
-                <StatNote>{formatUsd(state.totalNotional, { compact: true })} notional</StatNote>
-              </>
-            ) : null}
-          </Stat>
+          <AccountValueStat balances={balances} />
           <Stat label="USDC available" loading={pending}>
             {state ? (
               <>
-                <StatValue>{formatUsd(state.withdrawable)}</StatValue>
-                <StatNote>Withdrawable</StatNote>
+                <StatValue>
+                  <span data-testid="testnet-usdc-available">{formatUsd(state.withdrawable)}</span>
+                </StatValue>
+                <StatNote>
+                  {builderUsdc && showTransferNote
+                    ? `${formatUsd(builderUsdc.withdrawable, { compact: true })} in ${builderUsdc.dex}`
+                    : "Perps, withdrawable"}
+                </StatNote>
               </>
             ) : null}
           </Stat>
           <Stat label="Margin used" loading={pending}>
             {state ? (
               <>
-                <StatValue>{formatUsd(state.totalMarginUsed)}</StatValue>
+                <StatValue>{formatUsd(marginUsed)}</StatValue>
                 <StatNote>
-                  {state.positions.length} open{" "}
-                  {state.positions.length === 1 ? "position" : "positions"}
+                  {positions.length} open {positions.length === 1 ? "position" : "positions"}
                 </StatNote>
               </>
             ) : null}
           </Stat>
           <Stat label="Unrealized PnL" loading={pending}>
-            {state ? <LiveTestnetPnl state={state} /> : null}
+            {state ? <LiveTestnetPnl positions={positions} /> : null}
           </Stat>
         </dl>
       )}
 
-      {state && state.accountValue < DUST_ACCOUNT_VALUE ? (
+      {showTransferNote && builderUsdc?.dex ? (
+        <p
+          data-testid="testnet-transfer-note"
+          className="rounded-lg border border-brand/40 bg-brand-dim px-3 py-2 text-xs text-foreground"
+        >
+          <BuilderUsdcNote dex={builderUsdc.dex} />
+        </p>
+      ) : null}
+
+      {showNoFunds ? (
         <p
           data-testid="testnet-no-funds"
           className="rounded-lg border border-brand/40 bg-brand-dim px-3 py-2 text-xs text-foreground"
@@ -197,7 +230,7 @@ function ConnectedAccount({ address }: { address: string }) {
       ) : null}
 
       <PositionsTable
-        positions={state?.positions}
+        positions={state ? positions : undefined}
         status={account.status}
         onRetry={() => void account.refetch()}
         title="Testnet positions"
@@ -205,6 +238,11 @@ function ConnectedAccount({ address }: { address: string }) {
         showCopy={false}
         emptyTitle="No open testnet positions"
         emptyDescription="This wallet holds no perps on testnet."
+      />
+      <BalancesPanel
+        balances={balances}
+        title="Testnet balances"
+        titleId="testnet-balances-title"
       />
       <RecentFills
         fills={fills.data}
@@ -221,8 +259,8 @@ function ConnectedAccount({ address }: { address: string }) {
 }
 
 /** Re-renders on every tick of a position coin, so it stays a small leaf. */
-function LiveTestnetPnl({ state }: { state: ClearinghouseState }) {
-  const pnl = useLiveUnrealizedPnl(state.positions);
+function LiveTestnetPnl({ positions }: { positions: readonly AccountPosition[] }) {
+  const pnl = useLiveUnrealizedPnl(positions);
   return (
     <>
       <StatValue className={signTone(pnl)}>

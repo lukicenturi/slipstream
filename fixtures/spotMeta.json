@@ -1,0 +1,233 @@
+{
+  "tokens": [
+    {
+      "name": "USDC",
+      "szDecimals": 8,
+      "weiDecimals": 8,
+      "index": 0,
+      "tokenId": "0xeb62eee3685fc4c43992febcd9e75443",
+      "isCanonical": true,
+      "evmContract": {
+        "address": "0x0b80659a4076e9e93c7dbe0f10675a16a3e5c206",
+        "evm_extra_wei_decimals": -2
+      },
+      "fullName": null,
+      "deployerTradingFeeShare": "0.0"
+    },
+    {
+      "name": "PURR",
+      "szDecimals": 0,
+      "weiDecimals": 5,
+      "index": 1,
+      "tokenId": "0xc4bf3f870c0e9465323c0b6ed28096c2",
+      "isCanonical": true,
+      "evmContract": {
+        "address": "0xa9056c15938f9aff34cd497c722ce33db0c2fd57",
+        "evm_extra_wei_decimals": 13
+      },
+      "fullName": "Hypurr",
+      "deployerTradingFeeShare": "0.0"
+    },
+    {
+      "name": "HYPE",
+      "szDecimals": 2,
+      "weiDecimals": 8,
+      "index": 1105,
+      "tokenId": "0x7317beb7cceed72ef0b346074cc8e7ab",
+      "isCanonical": false,
+      "evmContract": {
+        "address": "0x0000000000000000000000000000000000000000",
+        "evm_extra_wei_decimals": 10
+      },
+      "fullName": "Hyperliquid",
+      "deployerTradingFeeShare": "0.0"
+    },
+    {
+      "name": "HAR",
+      "szDecimals": 0,
+      "weiDecimals": 8,
+      "index": 1211,
+      "tokenId": "0x1d894c27810b4901f66e1744625f9ef9",
+      "isCanonical": false,
+      "evmContract": {
+        "address": "0xfb50da9cb5f277bd386bd612544c2324d948191f",
+        "evm_extra_wei_decimals": 10
+      },
+      "fullName": "Harmonix Finance",
+      "deployerTradingFeeShare": "1.0"
+    },
+    {
+      "name": "USDZZ",
+      "szDecimals": 2,
+      "weiDecimals": 8,
+      "index": 1328,
+      "tokenId": "0x7bc98b970531175951be66e5307ce3bc",
+      "isCanonical": false,
+      "evmContract": null,
+      "fullName": null,
+      "deployerTradingFeeShare": "0.0"
+    },
+    {
+      "name": "TACO",
+      "szDecimals": 2,
+      "weiDecimals": 8,
+      "index": 1350,
+      "tokenId": "0xc2e4669f2f5ac2d933da71fddab76377",
+      "isCanonical": false,
+      "evmContract": {
+        "address": "0x4044510ff53bb5100c544aca65e2f2ff213412b9",
+        "evm_extra_wei_decimals": 0
+      },
+      "fullName": "Taco",
+      "deployerTradingFeeShare": "0.1"
+    },
+    {
+      "name": "DBLN",
+      "szDecimals": 2,
+      "weiDecimals": 8,
+      "index": 1390,
+      "tokenId": "0x3ff61d5f2fb54fd3beea533344382cb7",
+      "isCanonical": false,
+      "evmContract": {
+        "address": "0xf7b47d55fa37ff8540c7f19cdee97a20c8ffb789",
+        "evm_extra_wei_decimals": -2
+      },
+      "fullName": "Doubloon",
+      "deployerTradingFeeShare": "0.0"
+    },
+    {
+      "name": "DENIM",
+      "szDecimals": 2,
+      "weiDecimals": 8,
+      "index": 1434,
+      "tokenId": "0x34ffa5950a43a1f15eddf737d7b52091",
+      "isCanonical": false,
+      "evmContract": {
+        "address": "0x26640997303ea0ddcbd3fb4382875b6348cd584b",
+        "evm_extra_wei_decimals": -2
+      },
+      "fullName": "DENIM",
+      "deployerTradingFeeShare": "0.0"
+    },
+    {
+      "name": "HARRR",
+      "szDecimals": 2,
+      "weiDecimals": 8,
+      "index": 1483,
+      "tokenId": "0xdba2779d37628efc3967b98adf04172d",
+      "isCanonical": false,
+      "evmContract": {
+        "address": "0x923a9c790beed09868c9469c863476331d529478",
+        "evm_extra_wei_decimals": 10
+      },
+      "fullName": null,
+      "deployerTradingFeeShare": "1.0"
+    },
+    {
+      "name": "SLIM",
+      "szDecimals": 2,
+      "weiDecimals": 8,
+      "index": 1491,
+      "tokenId": "0x45754dd4d3bb5517fa92dbbe8ccb6392",
+      "isCanonical": false,
+      "evmContract": {
+        "address": "0x719d4dee0fbefebbfbc837b2347840684b891916",
+        "evm_extra_wei_decimals": 10
+      },
+      "fullName": "The Real Slim Shady",
+      "deployerTradingFeeShare": "1.0"
+    }
+  ],
+  "universe": [
+    {
+      "tokens": [
+        1,
+        0
+      ],
+      "name": "PURR/USDC",
+      "index": 0,
+      "isCanonical": true
+    },
+    {
+      "tokens": [
+        1105,
+        1328
+      ],
+      "name": "@1201",
+      "index": 1201,
+      "isCanonical": false
+    },
+    {
+      "tokens": [
+        1105,
+        1204
+      ],
+      "name": "@1207",
+      "index": 1207,
+      "isCanonical": false
+    },
+    {
+      "tokens": [
+        1350,
+        0
+      ],
+      "name": "@1219",
+      "index": 1219,
+      "isCanonical": false
+    },
+    {
+      "tokens": [
+        1,
+        1390
+      ],
+      "name": "@1267",
+      "index": 1267,
+      "isCanonical": true
+    },
+    {
+      "tokens": [
+        1211,
+        0
+      ],
+      "name": "@1324",
+      "index": 1324,
+      "isCanonical": false
+    },
+    {
+      "tokens": [
+        1,
+        1434
+      ],
+      "name": "@1325",
+      "index": 1325,
+      "isCanonical": true
+    },
+    {
+      "tokens": [
+        1,
+        1295
+      ],
+      "name": "@1376",
+      "index": 1376,
+      "isCanonical": true
+    },
+    {
+      "tokens": [
+        1483,
+        0
+      ],
+      "name": "@1382",
+      "index": 1382,
+      "isCanonical": false
+    },
+    {
+      "tokens": [
+        1,
+        1435
+      ],
+      "name": "@1408",
+      "index": 1408,
+      "isCanonical": true
+    }
+  ]
+}

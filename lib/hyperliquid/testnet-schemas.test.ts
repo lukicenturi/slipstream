@@ -44,13 +44,16 @@ describe("metaSchema (testnet fixture)", () => {
 });
 
 describe("allMidsSchema (testnet fixture)", () => {
-  it("keeps perp mids as numbers and drops spot and builder keys", () => {
+  it("keeps perp and spot mids as numbers and drops builder keys", () => {
     const mids = allMidsSchema.parse(fixture("testnet-allMids.json"));
     expect(mids.BTC).toBe(74712);
     expect(mids.ETH).toBeCloseTo(2017.15);
-    expect(Object.keys(mids).some((coin) => coin.startsWith("@") || coin.startsWith("#"))).toBe(
-      false,
-    );
+    expect(
+      Object.keys(mids)
+        .filter((coin) => coin.startsWith("@"))
+        .sort(),
+    ).toEqual(["@1", "@107"]);
+    expect(Object.keys(mids).some((coin) => coin.startsWith("#"))).toBe(false);
   });
 
   it("skips one bad value instead of failing", () => {

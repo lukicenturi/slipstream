@@ -33,7 +33,8 @@ The previous address, https://slipstream-alpha.vercel.app, still works. A link i
 - **Live feed.** Orders of the top 20 traders arrive in real time. `/?view=live` opens the feed alone: on mobile as the row list (its own tab in the bottom bar), on desktop as a dense full-width table with Time, Trader, Action, Asset, Size @ Price, Notional and Closed PnL columns. `/` on desktop shows the leaderboard and the feed side by side. Partial fills of one order join into one row. The feed keeps at most 100 rows and drops duplicates after a reconnect.
 - **Name search.** The header search accepts an address, an ENS name (`vitalik.eth`) or a Hyperliquid Names name (`testooor.hl`). The server resolves the name, and the search opens `/trader/<address>`. The search shows a clear message when a name has no address, when the lookup fails, and when the input is not valid.
 - **Names instead of addresses.** The leaderboard, the live feed, the watching chips and the profile header show a name when one exists. The order is: the Hyperliquid display name, then the `.hl` primary name, then the ENS primary name, then the short address.
-- **Trader profile.** Go to `/trader/<address>`. It shows account value, live unrealized PnL, win rate, open positions with a live mark price, a PnL chart and the last 50 orders.
+- **Trader profile.** Go to `/trader/<address>`. It shows account value, live unrealized PnL, win rate, open positions with a live mark price, balances, a PnL chart and the last 50 orders.
+- **Balances across exchanges and spot.** The profile and the account page read the main perp exchange, every builder perp exchange that the address uses (for example `vntls` on testnet) and the spot account. "Account value" is the total of all of them, with a "Perps · Spot" line under it. See [Balances](#balances).
 - **Tracking and alerts.** Star a trader on a leaderboard row or a feed row, or press "Follow" on the profile. `/watchlist` lists every tracked trader with account value, live unrealized PnL, open positions, the last trade, an alert switch and a remove button. Its form accepts an address, a `.eth` name or a `.hl` name. While a Slipstream tab is open, each new live order of a tracked trader becomes a notice: a toast, a row in the header bell, and (when you allow it) a browser notification. With push alerts on, a system notification arrives even when no tab is open. See [Tracking and alerts](#tracking-and-alerts) and [Push alerts](#push-alerts).
 - **Account page.** `/account` has a "My address" section: save an address, a `.eth` name or a `.hl` name once, and the page shows that trader profile on the network of the build. "Change" and "Forget" edit it. The value stays in this browser (`slipstream.myAddress`). In the testnet build, the page first shows the connected wallet's testnet account: account value, USDC available, margin used, live unrealized PnL, positions and fills, the testnet explorer link, an "Open on Mainnet" link to the same address on the mainnet host, and a faucet link when the wallet has no testnet funds. It uses the same queries and the same socket as `/trader/<address>`, so both pages show the same numbers. The page only reads; it sends no exchange request.
 - **Copy-trade sheet (demo).** Each position row and each perp feed row has a "Copy" button. The sheet shows side, size, leverage, the estimated margin and the estimated liquidation price. The confirm button says "Demo, no order is placed". It shows a toast and does nothing else.
@@ -84,7 +85,10 @@ flowchart LR
   Resolve --> RPC
   Names --> HLN
   Names --> RPC
-  Q -->|POST clearinghouseState,<br/>userFills, portfolio| Info
+  SpotMeta["/api/spot-meta<br/>token to USDC pair, cache 1 h"]
+  Q -->|GET| SpotMeta
+  SpotMeta -->|server-side spotMeta| Info
+  Q -->|POST clearinghouseState,<br/>spotClearinghouseState,<br/>userFills, portfolio| Info
   WS <-->|allMids, userFills| Socket
   WS --> Mids
   WS --> Feed
@@ -128,7 +132,7 @@ flowchart LR
 
 - **Server-side leaderboard trim and cache.** The leaderboard file is undocumented and about 39 MB on mainnet (about 45 MB and 55,000 rows on testnet). The server downloads the file of its own network, and both cache keys hold the network. The browser never downloads it. A route handler fetches it, keeps the top 100 rows by month PnL, and returns about 39 KB. The trimmed result has two cache layers: `unstable_cache` for 900 s and an in-memory copy with a 15 min TTL. If a refresh fails and older data exists, the route returns the older data with `stale: true`. If the shape changes and fewer than 10 rows parse, the route returns HTTP 502 and the UI shows an error with a retry button. The Day, Week and All tabs re-sort the same 100 rows, so a trader who is strong this week but not this month does not appear.
 - **One socket with reference counts.** All `allMids` and `userFills` subscriptions share one connection. The first subscriber sends `subscribe` and the last one sends `unsubscribe`. The socket closes 5 s after the last subscriber leaves. After a reconnect, the snapshot replay could add old fills again. The feed reducer stops this with a set of seen `user:tid` keys and a per-trader time watermark.
-- **Client-side info calls.** Per-wallet calls (`clearinghouseState`, `userFills`, `portfolio`) go from the browser straight to the info endpoint, which allows any origin. This keeps the server stateless and cheap. The cost: each visitor uses their own rate limit, and the server cannot cache these calls.
+- **Client-side info calls.** Per-wallet calls (`clearinghouseState`, `spotClearinghouseState`, `userNonFundingLedgerUpdates`, `userAbstraction`, `userFills`, `portfolio`) go from the browser straight to the info endpoint, which allows any origin. This keeps the server stateless and cheap. The cost: each visitor uses their own rate limit, and the server cannot cache these calls.
 - **Liquidation estimate.** The sheet uses the isolated-margin formula: long `entry * (1 - 1/leverage + mmr)`, short `entry * (1 + 1/leverage - mmr)`. The maintenance margin rate is `1 / (2 * maxLeverage)` when the coin's max leverage is known, else 0.5%. It ignores cross margin, funding, fees and margin tiers. It is an approximation, not the exchange's number.
 - **Fills carry no leverage.** The fill data has no leverage field, so feed rows do not show "5x". For a feed row, the sheet starts at 5x with a 20x limit. For a position row, it starts at the trader's leverage with the coin's max leverage.
 - **The Mark column shows the mid.** The app has no mark price feed. It uses the `allMids` mid, which is within a few ticks of the mark. Live PnL and ROE use the same mid.
@@ -154,7 +158,10 @@ flowchart LR
 - The win rate covers at most 2,000 fills, because `userFills` returns no more. For an active trader this is only the recent history.
 - The leaderboard endpoint is undocumented. It can change or go away without notice.
 - The feed follows the top 20 traders only. About 15 of them usually send a snapshot; the others have no recent fills.
-- Spot fills show the raw market id (for example `@107`), because the app does not load spot metadata. Spot rows have no "Copy" button.
+- Spot fills show the raw market id (for example `@107`). Only the Balances panel loads spot metadata (the token map). Spot rows have no "Copy" button.
+- On testnet (about 280 builder exchanges) the Balances panel reads only the builder exchanges that the address's fills or ledger name. An exchange that the address funded in another way does not show. Mainnet has 10, so it reads all of them.
+- Spot tokens without a USDC pair show "—" and do not count in the total.
+- The watchlist "Value" column is still the main perps account value. One row per trader with all exchanges and spot would cost up to 13 requests per row.
 - Markets from other perp DEXs (for example `xyz:NVDA`) have no live mid in `allMids`. Their sheet shows the last fill price as the mark.
 - The watchlist, the alert settings, the notices and the saved "My address" live in one browser. They do not sync across devices.
 - Push alerts can be up to a minute late (one poll per minute). On Workers Free, one run polls at most 27 addresses; with more tracked addresses, each address gets a turn every few minutes. A push covers the first 50 tracked traders with alerts on.
@@ -169,9 +176,31 @@ flowchart LR
 - An Expo app with the feed and the profile, sharing `lib/hyperliquid` and the hooks through a pnpm workspace.
 - Real mark prices, funding and max leverage per coin from `metaAndAssetCtxs`, so the sheet and the Mark column use exchange data.
 - The exchange's tiered maintenance margin table in the liquidation estimate.
-- Spot metadata, so spot rows show token names.
+- Token names for spot fills (the token map from `/api/spot-meta` already exists).
 - Feed filters (coin, side, minimum size) and a "followed traders only" view.
 - Playwright end-to-end tests in CI for the feed, the reconnect path and the sheet.
+
+## Balances
+
+Hyperliquid keeps the money of one address in several places. The Balances panel (profile and account page) shows all of them:
+
+- **Perps.** The main perp exchange (`clearinghouseState`).
+- **Builder perp exchanges.** HIP-3 exchanges such as `xyz` on mainnet or `vntls` on testnet. Each has its own margin account (`clearinghouseState` with `dex`). Their positions show in the positions table with a small badge (`vntls`). Their Copy button is off ("Builder exchange, not supported"), because the sheet places orders on the main exchange only.
+- **Spot.** The token balances (`spotClearinghouseState`).
+
+Which builder exchanges the app reads:
+
+1. The app loads the list (`perpDexs`).
+2. When the list has 20 entries or fewer (mainnet has 10), it reads every exchange.
+3. Otherwise (testnet has about 280), it reads only the exchanges that the address's fills (`vntls:vOAI`) or its ledger transfers (`sourceDex` / `destinationDex` of a `send`) name.
+
+How spot is priced: `/api/spot-meta` downloads `spotMeta` on the server, keeps a map from token to its USDC pair (`HARRR` -> `@1382`), and caches it for 1 h per network. The browser never downloads the raw file. The USD value is the token total times the live mid of the pair from the shared socket. USDC counts 1:1. A token without a USDC pair shows "—" and does not count. Until the socket sends the first mids, the account value says "Waiting for spot prices".
+
+Unified accounts: in a unified or portfolio margin account (`userAbstraction`), the perps margin is part of the spot USDC balance. The total then counts spot only, the perp rows show their value in a muted colour, and the stat line says "Unified".
+
+"Hide small" (on by default) hides rows below $1. A token without a price hides only when its total is 0. The switch is kept in `localStorage` (`slipstream.hideSmallBalances`).
+
+Copy trading on testnet uses the main perps USDC only. When it is 0 and a builder exchange holds USDC, the account page and the sheet say: "Your USDC is in vntls. Transfer it to Perps on Hyperliquid to trade here."
 
 ## Tracking and alerts
 
@@ -194,13 +223,14 @@ The bell's settings control toasts, browser notifications, push alerts and a min
 
 What is stored, all in `localStorage` of this browser:
 
-| Key                        | Value                                               |
-| -------------------------- | --------------------------------------------------- |
-| `slipstream.watchlist`     | the tracked addresses (unchanged format)            |
-| `slipstream.alerts`        | the global settings and the per-trader alert switch |
-| `slipstream.notifications` | the last 50 notices, newest first                   |
-| `slipstream.myAddress`     | the saved "My address" of the account page          |
-| `slipstream.push`          | whether push alerts are on, and the push endpoint   |
+| Key                            | Value                                               |
+| ------------------------------ | --------------------------------------------------- |
+| `slipstream.watchlist`         | the tracked addresses (unchanged format)            |
+| `slipstream.alerts`            | the global settings and the per-trader alert switch |
+| `slipstream.notifications`     | the last 50 notices, newest first                   |
+| `slipstream.myAddress`         | the saved "My address" of the account page          |
+| `slipstream.push`              | whether push alerts are on, and the push endpoint   |
+| `slipstream.hideSmallBalances` | the "Hide small" switch of the Balances panel       |
 
 Limits: in-tab alerts fire only while a Slipstream tab is open; push alerts cover the rest (see below). Browser notifications and push alerts need your permission. The watchlist page loads account data for the first 50 traders; alerts work for all of them.
 
@@ -330,7 +360,7 @@ All variables are optional. Without them the app works as is, read-only.
 ## Project layout
 
 ```
-app/                 routes: home (?view=live for the feed alone), /trader/[address], /watchlist, /account, /api/leaderboard, /api/resolve, /api/names, /dev
+app/                 routes: home (?view=live for the feed alone), /trader/[address], /watchlist, /account, /api/leaderboard, /api/resolve, /api/names, /api/spot-meta, /dev
 components/          layout, leaderboard, feed, trader, account, copy-trade, shared, ui (restyled shadcn)
 hooks/               data hooks (queries, socket, mids, feed, watchlist, alerts, notices)
 lib/network.ts       the network of the build and every Hyperliquid endpoint

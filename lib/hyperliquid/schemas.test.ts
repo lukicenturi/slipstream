@@ -116,11 +116,12 @@ describe("portfolio fixture", () => {
 });
 
 describe("WebSocket fixtures", () => {
-  it("parses allMids and drops spot and builder keys", () => {
+  it("parses allMids, keeps spot pair keys and drops builder keys", () => {
     const message = allMidsMessageSchema.parse(fixture("ws-allMids.json"));
-    expect(Object.keys(message.mids)).toHaveLength(10);
+    expect(Object.keys(message.mids)).toHaveLength(11);
     expect(typeof message.mids.BTC).toBe("number");
-    expect(message.mids["@1"]).toBeUndefined();
+    // Spot pairs price the Balances panel.
+    expect(message.mids["@1"]).toBeCloseTo(10.8835);
     expect(message.mids["#114910"]).toBeUndefined();
   });
 

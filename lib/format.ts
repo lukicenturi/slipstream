@@ -89,6 +89,34 @@ export function formatSize(value: number): string {
   return `${signPrefix(clean(value, body), false)}${body}`;
 }
 
+const amountFormats = new Map<number, Intl.NumberFormat>();
+
+function clampDecimals(value: number, fallback: number): number {
+  return Number.isFinite(value) ? Math.min(8, Math.max(0, Math.floor(value))) : fallback;
+}
+
+/**
+ * Token amounts with at most `maxDecimals` decimals (0 to 8), trailing
+ * zeros removed down to `minDecimals`: 244.36306387 with 2 -> 244.36,
+ * 10000 with 2 -> 10,000, 0.7968 with 2 and 2 -> 0.80.
+ */
+export function formatAmount(value: number, maxDecimals: number, minDecimals = 0): string {
+  if (!Number.isFinite(value)) return EMPTY_VALUE;
+  const max = clampDecimals(maxDecimals, 4);
+  const min = Math.min(max, clampDecimals(minDecimals, 0));
+  const cacheKey = max * 10 + min;
+  let format = amountFormats.get(cacheKey);
+  if (!format) {
+    format = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: min,
+      maximumFractionDigits: max,
+    });
+    amountFormats.set(cacheKey, format);
+  }
+  const body = format.format(Math.abs(value));
+  return `${signPrefix(clean(value, body), false)}${body}`;
+}
+
 /** 0xf5d81a135f756ca16544e53c20fc20643ec3ad53 -> 0xf5d8…ad53. */
 export function shortAddress(address: string): string {
   if (address.length <= 12) return address;

@@ -1,19 +1,29 @@
 import type { z } from "zod";
 
+import { dexesFromLedger } from "@/lib/calc/balances";
 import { HL } from "@/lib/network";
 
 import {
   allMidsSchema,
   clearinghouseStateSchema,
   leaderboardResponseSchema,
+  ledgerDexMovesSchema,
   metaSchema,
+  perpDexsSchema,
   portfolioSchema,
+  spotClearinghouseStateSchema,
+  spotTokenMapSchema,
+  userAbstractionSchema,
   userFillsSchema,
   type ClearinghouseState,
   type Fill,
   type LeaderboardResponse,
   type PerpAsset,
+  type PerpDex,
   type Portfolio,
+  type SpotBalance,
+  type SpotTokenMap,
+  type UserAbstraction,
 } from "./schemas";
 
 /*
@@ -48,9 +58,13 @@ export class HyperliquidError extends Error {
 
 /** The read-only info requests that the app sends. */
 export type InfoRequest =
-  | { type: "clearinghouseState"; user: string }
+  | { type: "clearinghouseState"; user: string; dex?: string }
+  | { type: "spotClearinghouseState"; user: string }
+  | { type: "userNonFundingLedgerUpdates"; user: string; startTime: number }
   | { type: "userFills"; user: string }
   | { type: "portfolio"; user: string }
+  | { type: "userAbstraction"; user: string }
+  | { type: "perpDexs" }
   | { type: "meta" }
   | { type: "allMids" };
 
@@ -128,15 +142,70 @@ export function getLeaderboard(options: RequestOptions = {}): Promise<Leaderboar
   );
 }
 
+/**
+ * The perp margin account of an address. Without `dex` (or with ""), the
+ * main perp exchange; with `dex`, that builder exchange ("vntls").
+ */
 export function getClearinghouseState(
   address: string,
-  options: InfoOptions = {},
+  options: InfoOptions & { dex?: string } = {},
 ): Promise<ClearinghouseState> {
+  const { dex, ...rest } = options;
+  const body: InfoRequest = dex
+    ? { type: "clearinghouseState", user: address.toLowerCase(), dex }
+    : { type: "clearinghouseState", user: address.toLowerCase() };
+  return infoRequest(body, clearinghouseStateSchema, rest);
+}
+
+/** The builder-deployed perp exchanges of this network (the main one is left out). */
+export function getPerpDexs(options: InfoOptions = {}): Promise<PerpDex[]> {
+  return infoRequest({ type: "perpDexs" }, perpDexsSchema, options);
+}
+
+/** The spot balances of an address, with numbers. */
+export function getSpotClearinghouseState(
+  address: string,
+  options: InfoOptions = {},
+): Promise<SpotBalance[]> {
   return infoRequest(
-    { type: "clearinghouseState", user: address.toLowerCase() },
-    clearinghouseStateSchema,
+    { type: "spotClearinghouseState", user: address.toLowerCase() },
+    spotClearinghouseStateSchema,
     options,
   );
+}
+
+/**
+ * The builder exchanges that the address sent USDC or tokens from or to,
+ * read from its ledger (deposits, transfers, sends). Sorted, no duplicates.
+ */
+export async function getLedgerDexes(
+  address: string,
+  options: InfoOptions = {},
+): Promise<string[]> {
+  const user = address.toLowerCase();
+  const moves = await infoRequest(
+    { type: "userNonFundingLedgerUpdates", user, startTime: 0 },
+    ledgerDexMovesSchema,
+    options,
+  );
+  return dexesFromLedger(moves, user);
+}
+
+/** The account mode of an address ("default", "unifiedAccount", ...). */
+export function getUserAbstraction(
+  address: string,
+  options: InfoOptions = {},
+): Promise<UserAbstraction> {
+  return infoRequest(
+    { type: "userAbstraction", user: address.toLowerCase() },
+    userAbstractionSchema,
+    options,
+  );
+}
+
+/** The trimmed spot token map from our own API route (never the raw spotMeta). */
+export function getSpotTokenMap(options: RequestOptions = {}): Promise<SpotTokenMap> {
+  return requestJson("/api/spot-meta", { signal: withTimeout(options.signal) }, spotTokenMapSchema);
 }
 
 export function getUserFills(address: string, options: InfoOptions = {}): Promise<Fill[]> {

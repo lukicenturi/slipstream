@@ -19,12 +19,15 @@ export function AssetIcon({
   coin,
   size = 16,
   className,
+  monogramOnly = false,
 }: {
   coin: string;
   size?: 16 | 20 | 24;
   className?: string;
+  /** Skip the image request (spot tokens: the coin images are perp names). */
+  monogramOnly?: boolean;
 }) {
-  const symbol = iconSymbol(coin);
+  const symbol = monogramOnly ? null : iconSymbol(coin);
   const [failed, setFailed] = useState(() => symbol === null || failedSymbols.has(symbol));
   const imgRef = useRef<HTMLImageElement>(null);
 

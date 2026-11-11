@@ -206,6 +206,21 @@ In-tab alerts fire while a Slipstream tab is open. Phase 5a adds Web Push for th
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` pass, every leaderboard and feed row shows a blockie with unchanged row heights, a rendered blockie matches the reference data, and 375 px has no horizontal scroll.
 
+## Phase 4i: balances across exchanges and spot
+
+The account page and the profiles read every perp exchange that an address uses and its spot balances, so USDC in a builder exchange (for example `vntls` on testnet) or in spot no longer shows as $0.00.
+
+- [x] Fixtures from real responses: `perpDexs`, `clearinghouseState` with `dex`, `spotClearinghouseState`, `spotMeta` (trimmed), `userNonFundingLedgerUpdates` (trimmed), `userAbstraction`
+- [x] Zod schemas and client calls: `getPerpDexs`, `getClearinghouseState(address, { dex })`, `getSpotClearinghouseState`, `getLedgerDexes`, `getUserAbstraction`, `getSpotTokenMap`
+- [x] The mids store keeps spot pair keys (`@1382`, `PURR/USDC`) and still drops `#` keys
+- [x] `/api/spot-meta`: a trimmed token map (token -> USDC pair), cached 1 h per network; the browser never downloads the raw `spotMeta`
+- [x] `lib/calc/balances.ts` with tests: the discovery rule (all exchanges up to 20, else only those in fills and the ledger), spot pricing, the account summary (unified accounts do not count perps margin twice), small balances, row order
+- [x] `hooks/useAccountBalances.ts` and the Balances panel on the profile and the testnet account page; "Account value" is the total with a perps/spot line; builder positions show a dex badge and no Copy
+- [x] The copy-trade sheet and the account page name the builder exchange when the main perps USDC is 0
+- [x] README, DECISIONS and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` and `pnpm build` (both modes) pass; on testnet, `/trader/0x9dbe4eb4a0a41955e1dc733e322f84295a0aa5c0` and `/account` show `USDC · Perps · vntls 67.73` and `HARRR · Spot 244.36 ≈ $195`; mainnet shows the spot rows and queries the 10 builder exchanges; 375 px has no horizontal scroll.
+
 ## Phase 5a: push alerts
 
 Alerts reach the user when no Slipstream tab is open. A Cloudflare Worker (`workers/push/`) with a D1 store polls the tracked addresses once a minute and sends Web Push messages; the app's service worker shows them. Free tiers only.

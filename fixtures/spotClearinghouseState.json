@@ -1,0 +1,39 @@
+{
+  "balances": [
+    {
+      "coin": "USDC",
+      "token": 0,
+      "total": "0.7968",
+      "hold": "0.0",
+      "entryNtl": "0.0"
+    },
+    {
+      "coin": "HAR",
+      "token": 1211,
+      "total": "3436.2971518",
+      "hold": "0.0",
+      "entryNtl": "0.19733005"
+    },
+    {
+      "coin": "TACO",
+      "token": 1350,
+      "total": "10000.0",
+      "hold": "0.0",
+      "entryNtl": "0.1"
+    },
+    {
+      "coin": "HARRR",
+      "token": 1483,
+      "total": "244.36306387",
+      "hold": "0.0",
+      "entryNtl": "0.00244363"
+    },
+    {
+      "coin": "SLIM",
+      "token": 1491,
+      "total": "2766.02712",
+      "hold": "0.0",
+      "entryNtl": "0.02766027"
+    }
+  ]
+}

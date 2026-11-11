@@ -12,15 +12,18 @@ import {
   SizeField,
   SummaryRow,
 } from "@/components/copy-trade/CopyTradeFields";
+import { BuilderUsdcNote } from "@/components/account/BuilderUsdcNote";
 import type { CopyTradePrefill } from "@/components/copy-trade/CopyTradeProvider";
 import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { useAccountBalances } from "@/hooks/useAccountBalances";
 import { forgetAgent } from "@/hooks/useAgent";
 import { useMid } from "@/hooks/useMid";
 import { useTestnetMeta } from "@/hooks/useTestnetMeta";
 import { useApproveAgent, usePlaceTestnetOrder, type OrderPhase } from "@/hooks/useTradingActions";
 import { useTradingSession } from "@/hooks/useTradingSession";
 import { displaySymbol } from "@/lib/assets";
+import { builderDexWithUsdc, perpAccounts } from "@/lib/calc/balances";
 import {
   DEFAULT_SIZE_USD,
   clampSizeUsd,
@@ -79,6 +82,15 @@ export default function TestnetCopyTradeForm({
   const [result, setResult] = useState<OrderResult | null>(null);
 
   const position = session.account.data?.positions.find((entry) => entry.coin === coin);
+  // Orders use the main perps USDC. When it is 0, look for USDC in a builder exchange.
+  const noMainUsdc = session.balanceUsd !== undefined && session.balanceUsd < 0.01;
+  const balances = useAccountBalances(session.address, {
+    enabled: open && noMainUsdc,
+    spot: false,
+  });
+  const builderUsdc = noMainUsdc
+    ? builderDexWithUsdc(perpAccounts(undefined, balances.dexStates))
+    : null;
   const step = session.status === "disconnected" ? 1 : session.status === "connected" ? 2 : 3;
 
   let blockReason: string | null;
@@ -211,7 +223,7 @@ export default function TestnetCopyTradeForm({
           <p
             id={`${id}-reason`}
             data-testid="order-block-reason"
-            className="flex items-center justify-center gap-2 text-center text-2xs text-muted-foreground"
+            className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center text-2xs text-muted-foreground"
           >
             {blockReason}
             {retry ? (
@@ -219,7 +231,11 @@ export default function TestnetCopyTradeForm({
                 Retry
               </button>
             ) : null}
-            {session.balanceUsd === 0 ? (
+            {builderUsdc?.dex ? (
+              <span data-testid="sheet-transfer-note">
+                <BuilderUsdcNote dex={builderUsdc.dex} linkClassName={LINK} />
+              </span>
+            ) : session.balanceUsd === 0 ? (
               <a
                 href={TESTNET.faucetUrl}
                 target="_blank"

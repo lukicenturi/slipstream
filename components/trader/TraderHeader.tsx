@@ -3,16 +3,18 @@
 import { CopyIcon, ExternalLinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { AccountValueStat } from "@/components/account/AccountValueStat";
 import { Blockie } from "@/components/shared/Blockie";
 import { Stat, STAT_GRID, StatNote, StatValue } from "@/components/shared/Stat";
 import { EmptyState, ErrorState } from "@/components/shared/States";
 import { signTone } from "@/components/shared/tone";
 import { Button } from "@/components/ui/button";
+import type { AccountBalances } from "@/hooks/useAccountBalances";
 import { useLiveUnrealizedPnl } from "@/hooks/useLiveUnrealizedPnl";
 import { useProfileDisplayName } from "@/hooks/useNames";
+import type { AccountPosition } from "@/lib/calc/balances";
 import type { WinRate } from "@/lib/calc/winRate";
 import { EMPTY_VALUE, formatPercent, formatUsd, shortAddress } from "@/lib/format";
-import type { ClearinghouseState } from "@/lib/hyperliquid/schemas";
 import { explorerAddressUrl, HL, NETWORK } from "@/lib/network";
 
 import { FollowButton } from "./FollowButton";
@@ -65,7 +67,8 @@ function AddressActions({ address }: { address: string }) {
  */
 export function TraderHeader({
   address,
-  state,
+  balances,
+  positions,
   stateStatus,
   onRetryState,
   winRate,
@@ -73,7 +76,10 @@ export function TraderHeader({
   noActivity,
 }: {
   address: string;
-  state: ClearinghouseState | undefined;
+  /** Every perp exchange and spot; "Account value" adds them up. */
+  balances: AccountBalances;
+  /** Open positions of every perp exchange. */
+  positions: readonly AccountPosition[];
   stateStatus: QueryStatus;
   onRetryState: () => void;
   winRate: WinRate | undefined;
@@ -150,27 +156,21 @@ export function TraderHeader({
         </div>
       ) : (
         <dl data-testid="trader-stats" className={STAT_GRID}>
-          <Stat label="Account value" loading={stateStatus === "pending"}>
-            {state ? (
-              <>
-                <StatValue>{formatUsd(state.accountValue)}</StatValue>
-                <StatNote>{formatUsd(state.withdrawable, { compact: true })} withdrawable</StatNote>
-              </>
-            ) : null}
-          </Stat>
+          <AccountValueStat balances={balances} />
           <Stat label="Unrealized PnL" loading={stateStatus === "pending"}>
-            {state ? <LiveUnrealizedPnl state={state} /> : null}
+            <LiveUnrealizedPnl
+              positions={positions}
+              marginUsed={sumStates(balances, "totalMarginUsed")}
+            />
           </Stat>
           <Stat label="Win rate" loading={fillsStatus === "pending"}>
             <WinRateValue winRate={winRate} failed={fillsStatus === "error"} />
           </Stat>
           <Stat label="Open positions" loading={stateStatus === "pending"}>
-            {state ? (
-              <>
-                <StatValue>{state.positions.length}</StatValue>
-                <StatNote>{formatUsd(state.totalNotional, { compact: true })} notional</StatNote>
-              </>
-            ) : null}
+            <StatValue>{positions.length}</StatValue>
+            <StatNote>
+              {formatUsd(sumStates(balances, "totalNotional"), { compact: true })} notional
+            </StatNote>
           </Stat>
         </dl>
       )}
@@ -178,15 +178,28 @@ export function TraderHeader({
   );
 }
 
+/** The sum of one margin figure over the main and the loaded builder exchanges. */
+function sumStates(balances: AccountBalances, field: "totalNotional" | "totalMarginUsed"): number {
+  let sum = balances.main.data?.[field] ?? 0;
+  for (const { state } of balances.dexStates) sum += state[field];
+  return sum;
+}
+
 /** Re-renders on every tick of a position coin, so it stays a small leaf. */
-function LiveUnrealizedPnl({ state }: { state: ClearinghouseState }) {
-  const pnl = useLiveUnrealizedPnl(state.positions);
+function LiveUnrealizedPnl({
+  positions,
+  marginUsed,
+}: {
+  positions: readonly AccountPosition[];
+  marginUsed: number;
+}) {
+  const pnl = useLiveUnrealizedPnl(positions);
   return (
     <>
       <StatValue className={signTone(pnl)}>
         <span data-testid="trader-unrealized-pnl">{formatUsd(pnl, { signed: true })}</span>
       </StatValue>
-      <StatNote>{formatUsd(state.totalMarginUsed, { compact: true })} margin used</StatNote>
+      <StatNote>{formatUsd(marginUsed, { compact: true })} margin used</StatNote>
     </>
   );
 }
