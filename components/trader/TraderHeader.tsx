@@ -9,6 +9,7 @@ import { signTone } from "@/components/shared/tone";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLiveUnrealizedPnl } from "@/hooks/useLiveUnrealizedPnl";
+import { useProfileDisplayName } from "@/hooks/useNames";
 import type { WinRate } from "@/lib/calc/winRate";
 import { EMPTY_VALUE, formatPercent, formatUsd, shortAddress } from "@/lib/format";
 import type { ClearinghouseState } from "@/lib/hyperliquid/schemas";
@@ -31,9 +32,38 @@ async function copyAddress(address: string): Promise<void> {
   }
 }
 
+/** Copy the address, or open it in the Hyperliquid explorer. */
+function AddressActions({ address }: { address: string }) {
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        aria-label="Copy address"
+        onClick={() => void copyAddress(address)}
+      >
+        <CopyIcon aria-hidden="true" />
+      </Button>
+      <Button asChild variant="ghost" size="icon-xs">
+        <a
+          href={explorerUrl(address)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open in the Hyperliquid explorer"
+        >
+          <ExternalLinkIcon aria-hidden="true" />
+        </a>
+      </Button>
+    </>
+  );
+}
+
 /**
- * The profile header: the address with copy and explorer actions, the
- * Follow button, and a stat grid (2 columns on mobile, 4 on desktop).
+ * The profile header: the trader name (when one exists) and the address
+ * with copy and explorer actions, the Follow button, and a stat grid
+ * (2 columns on mobile, 4 on desktop). Names are best effort: without one,
+ * the address is the main line.
  */
 export function TraderHeader({
   address,
@@ -52,6 +82,7 @@ export function TraderHeader({
   fillsStatus: QueryStatus;
   noActivity: boolean;
 }) {
+  const name = useProfileDisplayName(address);
   return (
     <section aria-labelledby="trader-title" className="flex flex-col gap-3">
       <div className="flex items-end gap-3">
@@ -59,35 +90,39 @@ export function TraderHeader({
           <p className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
             Trader
           </p>
-          <div className="mt-0.5 flex min-w-0 items-center gap-1">
-            <h1
-              id="trader-title"
-              title={address}
-              className="min-w-0 truncate font-mono text-base text-foreground lg:text-lg"
-            >
-              <span className="md:hidden">{shortAddress(address)}</span>
-              <span className="hidden md:inline">{address}</span>
-            </h1>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Copy address"
-              onClick={() => void copyAddress(address)}
-            >
-              <CopyIcon aria-hidden="true" />
-            </Button>
-            <Button asChild variant="ghost" size="icon-xs">
-              <a
-                href={explorerUrl(address)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Open in the Hyperliquid explorer"
+          {name.source === "address" ? (
+            <div className="mt-0.5 flex min-w-0 items-center gap-1">
+              <h1
+                id="trader-title"
+                title={address}
+                className="min-w-0 truncate font-mono text-base text-foreground lg:text-lg"
               >
-                <ExternalLinkIcon aria-hidden="true" />
-              </a>
-            </Button>
-          </div>
+                <span className="md:hidden">{shortAddress(address)}</span>
+                <span className="hidden md:inline">{address}</span>
+              </h1>
+              <AddressActions address={address} />
+            </div>
+          ) : (
+            <>
+              <h1
+                id="trader-title"
+                title={address}
+                className="mt-0.5 min-w-0 truncate text-base font-medium text-foreground lg:text-lg"
+              >
+                {name.label}
+              </h1>
+              <div className="flex min-w-0 items-center gap-1">
+                <span
+                  data-testid="trader-address"
+                  title={address}
+                  className="truncate font-mono text-xs text-muted-foreground"
+                >
+                  {shortAddress(address)}
+                </span>
+                <AddressActions address={address} />
+              </div>
+            </>
+          )}
         </div>
         <FollowButton address={address} />
       </div>

@@ -1,7 +1,7 @@
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
 
 /** True for "0x" followed by 40 hex characters. */
-export function isAddress(value: string): boolean {
+export function isAddress(value: string): value is `0x${string}` {
   return ADDRESS_PATTERN.test(value);
 }
 
