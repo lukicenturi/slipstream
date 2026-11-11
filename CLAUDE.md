@@ -8,7 +8,7 @@ Read `PLAN.md` first. Work on one phase at a time and stop when its "Done when" 
 
 ## Hard rules
 
-- The app is read-only. Never add wallet connection, signing, or any call to Hyperliquid's exchange endpoint.
+- Production is read-only. Trading exists only on Hyperliquid testnet behind `NEXT_PUBLIC_TRADING_MODE=testnet`. Never create a mainnet exchange client. Never ask for or store a user's wallet key; only a generated agent key may be stored, in localStorage, for testnet.
 - The raw leaderboard file is fetched server-side only, trimmed and cached. Never fetch it from the browser.
 - Before writing a schema, `curl` the endpoint, save the response in `fixtures/`, and derive the zod schema from it. Do not guess field names.
 

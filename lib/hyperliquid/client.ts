@@ -1,20 +1,24 @@
 import type { z } from "zod";
 
 import {
+  allMidsSchema,
   clearinghouseStateSchema,
   leaderboardResponseSchema,
+  metaSchema,
   portfolioSchema,
   userFillsSchema,
   type ClearinghouseState,
   type Fill,
   type LeaderboardResponse,
+  type PerpAsset,
   type Portfolio,
 } from "./schemas";
 
 /*
  * REST client. Every response goes through a zod schema here, so the
  * rest of the app only sees parsed domain types with real numbers.
- * The app is read-only: this file calls the public info endpoint only.
+ * This file calls the public info endpoint only (mainnet by default, or
+ * the testnet info URL for the testnet trading build). It never signs.
  */
 
 export const INFO_URL = "https://api.hyperliquid.xyz/info";
@@ -44,10 +48,17 @@ export class HyperliquidError extends Error {
 export type InfoRequest =
   | { type: "clearinghouseState"; user: string }
   | { type: "userFills"; user: string }
-  | { type: "portfolio"; user: string };
+  | { type: "portfolio"; user: string }
+  | { type: "meta" }
+  | { type: "allMids" };
 
 interface RequestOptions {
   signal?: AbortSignal;
+}
+
+interface InfoOptions extends RequestOptions {
+  /** The info endpoint. The default is mainnet; the testnet build passes TESTNET.infoUrl. */
+  baseUrl?: string;
 }
 
 function withTimeout(signal: AbortSignal | undefined, ms = REQUEST_TIMEOUT_MS): AbortSignal {
@@ -92,10 +103,10 @@ async function requestJson<S extends z.ZodType>(
 export function infoRequest<S extends z.ZodType>(
   body: InfoRequest,
   schema: S,
-  options: RequestOptions = {},
+  options: InfoOptions = {},
 ): Promise<z.output<S>> {
   return requestJson(
-    INFO_URL,
+    options.baseUrl ?? INFO_URL,
     {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -117,7 +128,7 @@ export function getLeaderboard(options: RequestOptions = {}): Promise<Leaderboar
 
 export function getClearinghouseState(
   address: string,
-  options: RequestOptions = {},
+  options: InfoOptions = {},
 ): Promise<ClearinghouseState> {
   return infoRequest(
     { type: "clearinghouseState", user: address.toLowerCase() },
@@ -132,4 +143,17 @@ export function getUserFills(address: string, options: RequestOptions = {}): Pro
 
 export function getPortfolio(address: string, options: RequestOptions = {}): Promise<Portfolio> {
   return infoRequest({ type: "portfolio", user: address.toLowerCase() }, portfolioSchema, options);
+}
+
+/** The perp universe with each asset's id, size decimals and max leverage. */
+export function getMeta(baseUrl: string, options: RequestOptions = {}): Promise<PerpAsset[]> {
+  return infoRequest({ type: "meta" }, metaSchema, { ...options, baseUrl });
+}
+
+/** One REST snapshot of all perp mids. Live mainnet mids come from the socket instead. */
+export function getAllMidsOnce(
+  baseUrl: string,
+  options: RequestOptions = {},
+): Promise<Record<string, number>> {
+  return infoRequest({ type: "allMids" }, allMidsSchema, { ...options, baseUrl });
 }

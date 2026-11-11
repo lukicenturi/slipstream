@@ -3,6 +3,7 @@
 import { memo } from "react";
 
 import { CopyTradeButton } from "@/components/copy-trade/CopyTradeButton";
+import { AssetIcon } from "@/components/shared/AssetIcon";
 import { Price } from "@/components/shared/Price";
 import { Side } from "@/components/shared/Side";
 import { signTone } from "@/components/shared/tone";
@@ -38,7 +39,10 @@ export const PositionRow = memo(function PositionRow({ position }: { position: P
         scope="row"
         className="sticky left-0 z-[1] bg-background px-3 text-left text-xs font-medium whitespace-nowrap text-foreground transition-colors group-hover:bg-surface-hover max-md:border-r"
       >
-        {position.coin}
+        <span className="inline-flex items-center gap-1.5">
+          <AssetIcon coin={position.coin} />
+          {position.coin}
+        </span>
       </th>
       <td className="px-3">
         <Side

@@ -311,21 +311,29 @@ export interface AllMidsMessage {
   mids: Record<string, number>;
 }
 
+/** Keep perp coins with a finite mid. One bad value is skipped, not the whole map. */
+function parseMidsRecord(raw: Record<string, string>): Record<string, number> {
+  const mids: Record<string, number> = {};
+  for (const [coin, text] of Object.entries(raw)) {
+    if (!isPerpCoin(coin)) continue;
+    const value = Number(text);
+    if (text.trim() !== "" && Number.isFinite(value)) mids[coin] = value;
+  }
+  return mids;
+}
+
 export const allMidsMessageSchema = z
   .object({
     channel: z.literal("allMids"),
     data: z.object({ mids: z.record(z.string(), z.string()) }),
   })
-  .transform((message): AllMidsMessage => {
-    const mids: Record<string, number> = {};
-    for (const [coin, raw] of Object.entries(message.data.mids)) {
-      if (!isPerpCoin(coin)) continue;
-      const value = Number(raw);
-      // Skip one bad value instead of the whole message.
-      if (raw.trim() !== "" && Number.isFinite(value)) mids[coin] = value;
-    }
-    return { channel: "allMids", mids };
-  });
+  .transform((message): AllMidsMessage => ({
+    channel: "allMids",
+    mids: parseMidsRecord(message.data.mids),
+  }));
+
+/** Info {"type":"allMids"} over REST: the same map as the socket, without the envelope. */
+export const allMidsSchema = z.record(z.string(), z.string()).transform(parseMidsRecord);
 
 export interface UserFillsMessage {
   channel: "userFills";
@@ -399,3 +407,42 @@ export function parseWsMessage(input: unknown): WsMessage | null {
       return { channel: "unknown", originalChannel: envelope.data.channel };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Info: {"type":"meta"} (used for the testnet universe)
+// ---------------------------------------------------------------------------
+
+export interface PerpAsset {
+  /** The asset id in orders: the position in `universe`. */
+  index: number;
+  name: string;
+  szDecimals: number;
+  maxLeverage: number;
+  /** The asset allows isolated margin only. */
+  onlyIsolated: boolean;
+  isDelisted: boolean;
+}
+
+/** Extra keys (marginTableId, marginMode, marginTables) are stripped. */
+export const metaSchema = z
+  .object({
+    universe: z.array(
+      z.object({
+        name: z.string().min(1),
+        szDecimals: z.number().int().min(0),
+        maxLeverage: z.number().int().min(1),
+        onlyIsolated: z.boolean().optional(),
+        isDelisted: z.boolean().optional(),
+      }),
+    ),
+  })
+  .transform((meta): PerpAsset[] =>
+    meta.universe.map((asset, index) => ({
+      index,
+      name: asset.name,
+      szDecimals: asset.szDecimals,
+      maxLeverage: asset.maxLeverage,
+      onlyIsolated: asset.onlyIsolated === true,
+      isDelisted: asset.isDelisted === true,
+    })),
+  );

@@ -1,5 +1,6 @@
 import { memo } from "react";
 
+import { AssetIcon } from "@/components/shared/AssetIcon";
 import { Side } from "@/components/shared/Side";
 import { signTone } from "@/components/shared/tone";
 import type { AggregatedFill } from "@/lib/calc/aggregateFills";
@@ -21,8 +22,12 @@ export const FillRow = memo(function FillRow({ item }: { item: AggregatedFill })
     >
       <div className="flex min-w-0 items-center gap-2 text-xs">
         <Side label={badge.label} tone={badge.tone} />
-        <span className="min-w-0 truncate text-muted-foreground">
-          {action.phrase} <span className="font-medium text-foreground">{item.coin}</span>
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="min-w-0 truncate text-muted-foreground">{action.phrase}</span>
+          <span className="inline-flex shrink-0 items-center gap-1 font-medium text-foreground">
+            <AssetIcon coin={item.coin} />
+            {item.coin}
+          </span>
         </span>
         <span className="ml-auto shrink-0 font-mono text-foreground">
           {formatUsd(item.notional, { compact: true })}

@@ -41,10 +41,11 @@ interface SheetState {
 }
 
 /**
- * Holds the one demo copy-trade sheet of the app. Mount it once.
+ * Holds the one copy-trade sheet of the app. Mount it once.
  * The context value only holds the stable `openCopyTrade` function, so
  * memoised rows that read it do not re-render when the sheet opens.
- * The sheet makes no network call.
+ * In the read-only build the sheet makes no network call. In a testnet
+ * build it reads testnet data and can place a testnet order.
  */
 export function CopyTradeProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SheetState>({ open: false, prefill: null, session: 0 });
