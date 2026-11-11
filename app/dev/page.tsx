@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 /** Throwaway check page. Not linked from the navigation. */
 export default function DevPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6">
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6">
       <h1 className="mb-6 text-xl font-semibold">Dev check</h1>
       <DevPanel />
-    </main>
+    </div>
   );
 }

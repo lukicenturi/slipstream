@@ -83,12 +83,12 @@ Borrow layout, density and interaction patterns only. Do not copy logos, brand n
 
 ## Phase 2: leaderboard and feed (3–4 h)
 
-- [ ] `/` layout: leaderboard and live feed side by side on desktop, tabs on mobile
-- [ ] Leaderboard table: rank, short address (or display name), account value, PnL, ROI; day / week / month / all-time tabs; sortable
-- [ ] Live feed: subscribe to `userFills` for the top 10–20 traders; cards like "0xab…cd opened 5x long ETH, $240k, 12s ago"
-- [ ] Aggregate partial fills of the same order into one card
-- [ ] Cap the feed at about 100 items; new items animate in
-- [ ] Skeleton loaders, empty state, error state with retry, connection status indicator
+- [x] `/` layout: leaderboard and live feed side by side on desktop, tabs on mobile
+- [x] Leaderboard table: rank, short address (or display name), account value, PnL, ROI; day / week / month / all-time tabs; sortable
+- [x] Live feed: subscribe to `userFills` for the top 10–20 traders; cards like "0xab…cd opened 5x long ETH, $240k, 12s ago"
+- [x] Aggregate partial fills of the same order into one card
+- [x] Cap the feed at about 100 items; new items animate in
+- [x] Skeleton loaders, empty state, error state with retry, connection status indicator
 
 **Done when:** the feed updates live with no duplicates after a forced reconnect.
 

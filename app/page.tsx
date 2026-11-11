@@ -1,11 +1,11 @@
-/** Placeholder home page. Phase 2 adds the leaderboard and the live feed. */
+import { HomePanels } from "@/components/home/HomePanels";
+
+/** Home: the leaderboard and the live feed. */
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-2 px-4 py-6 md:px-6">
-      <h1 className="text-xl font-semibold">Slipstream</h1>
-      <p className="text-sm text-muted-foreground">
-        A read-only live feed of Hyperliquid perps traders.
-      </p>
-    </main>
+    <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col px-4 py-3 lg:px-6 lg:py-4">
+      <h1 className="sr-only">Slipstream: top Hyperliquid traders and their live trades</h1>
+      <HomePanels />
+    </div>
   );
 }

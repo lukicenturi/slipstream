@@ -10,5 +10,6 @@ export function useLeaderboard() {
     queryKey: ["leaderboard"],
     queryFn: ({ signal }) => getLeaderboard({ signal }),
     staleTime: 5 * 60_000,
+    refetchInterval: 10 * 60_000,
   });
 }
