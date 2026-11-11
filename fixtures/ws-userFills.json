@@ -1,0 +1,163 @@
+[
+  {
+    "channel": "userFills",
+    "data": {
+      "isSnapshot": true,
+      "user": "0xf5d81a135f756ca16544e53c20fc20643ec3ad53",
+      "fills": [
+        {
+          "coin": "ZEC",
+          "px": "986.9",
+          "sz": "1.17",
+          "side": "A",
+          "time": 1794383117622,
+          "startPosition": "4.44",
+          "dir": "Close Long",
+          "closedPnl": "0.406575",
+          "hash": "0x7843cab74f327e8879bd04488ba20502016a009cea359d5a1c0c760a0e365873",
+          "oid": 601439367056,
+          "crossed": true,
+          "fee": "0.166272",
+          "tid": 914401997361894,
+          "cloid": "0xae05533e910600a11f86dc4fa9238b4f",
+          "feeToken": "USDC",
+          "twapId": null
+        },
+        {
+          "coin": "ZEC",
+          "px": "986.9",
+          "sz": "0.11",
+          "side": "A",
+          "time": 1794383117754,
+          "startPosition": "3.27",
+          "dir": "Close Long",
+          "closedPnl": "0.038225",
+          "hash": "0xb0db3a8a180a068ab25404488ba20701f500526fb30d255c54a3e5dcd70de075",
+          "oid": 601439367874,
+          "crossed": true,
+          "fee": "0.015632",
+          "tid": 738662693571758,
+          "cloid": "0x4a26a2fba838303899a0c4bdfdc02a87",
+          "feeToken": "USDC",
+          "twapId": null
+        },
+        {
+          "coin": "ZEC",
+          "px": "986.9",
+          "sz": "2.19",
+          "side": "A",
+          "time": 1794383117824,
+          "startPosition": "3.16",
+          "dir": "Close Long",
+          "closedPnl": "0.761025",
+          "hash": "0xc733d23f7fa7a500c8ad04488ba2080201ba00251aaac3d26afc7d923eab7eeb",
+          "oid": 601439368433,
+          "crossed": true,
+          "fee": "0.311228",
+          "tid": 1122002755959757,
+          "cloid": "0x64147dda9267c16fcd4d76a203bb09c0",
+          "feeToken": "USDC",
+          "twapId": null
+        },
+        {
+          "coin": "ZEC",
+          "px": "986.9",
+          "sz": "0.19",
+          "side": "A",
+          "time": 1794383117892,
+          "startPosition": "0.97",
+          "dir": "Close Long",
+          "closedPnl": "0.066025",
+          "hash": "0x1ed2d4bba393280c204c04488ba20902018c00a13e9646dec29b800e629701f6",
+          "oid": 601439368834,
+          "crossed": true,
+          "fee": "0.027001",
+          "tid": 997765740809012,
+          "cloid": "0xb3ae6d3753b7456b18a831f699dd3439",
+          "feeToken": "USDC",
+          "twapId": null
+        },
+        {
+          "coin": "ZEC",
+          "px": "986.9",
+          "sz": "0.24",
+          "side": "A",
+          "time": 1794383118024,
+          "startPosition": "0.78",
+          "dir": "Close Long",
+          "closedPnl": "0.0834",
+          "hash": "0xee5cfbcccd6015a2efd604488ba20b0201a700b2686334749225a71f8c63ef8d",
+          "oid": 601439369597,
+          "crossed": true,
+          "fee": "0.034107",
+          "tid": 694260344536483,
+          "cloid": "0x49a6c4d9c87309d79a554a9283ba761b",
+          "feeToken": "USDC",
+          "twapId": null
+        }
+      ]
+    }
+  },
+  {
+    "channel": "userFills",
+    "data": {
+      "user": "0xf5d81a135f756ca16544e53c20fc20643ec3ad53",
+      "fills": [
+        {
+          "coin": "ZEC",
+          "px": "986.9",
+          "sz": "0.79",
+          "side": "A",
+          "time": 1794383125244,
+          "startPosition": "-37.35",
+          "dir": "Open Short",
+          "closedPnl": "0.0",
+          "hash": "0xff5f46c9535e8c5c00d904488ba27602010700aeee51ab2fa327f21c12526647",
+          "oid": 601439418083,
+          "crossed": true,
+          "fee": "0.112269",
+          "tid": 1027314590665188,
+          "cloid": "0x233a4268a2c94ce20dd2b8959b2b780d",
+          "feeToken": "USDC",
+          "twapId": null
+        },
+        {
+          "coin": "ZEC",
+          "px": "986.9",
+          "sz": "0.33",
+          "side": "A",
+          "time": 1794383125244,
+          "startPosition": "-38.14",
+          "dir": "Open Short",
+          "closedPnl": "0.0",
+          "hash": "0x650633ff86711154667f04488ba27602010900e52174302608cedf524574eb3f",
+          "oid": 601439418085,
+          "crossed": true,
+          "fee": "0.046897",
+          "tid": 596213592192456,
+          "cloid": "0x2eb33f240cb3a33d5c75f5cf11987623",
+          "feeToken": "USDC",
+          "twapId": null
+        },
+        {
+          "coin": "ZEC",
+          "px": "986.9",
+          "sz": "2.41",
+          "side": "A",
+          "time": 1794383125244,
+          "startPosition": "-38.47",
+          "dir": "Open Short",
+          "closedPnl": "0.0",
+          "hash": "0x17d9aa9aa00253d0195304488ba27602010a00803b0572a2bba255ed5f062dba",
+          "oid": 601439418086,
+          "crossed": true,
+          "fee": "0.342493",
+          "tid": 29843086500077,
+          "cloid": "0x1b552dae6fd73c8d99280af0a3bde525",
+          "feeToken": "USDC",
+          "twapId": null
+        }
+      ]
+    }
+  }
+]

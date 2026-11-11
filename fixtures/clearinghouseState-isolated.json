@@ -1,0 +1,66 @@
+{
+  "marginSummary": {
+    "accountValue": "19426576.4858350009",
+    "totalNtlPos": "125302311.0756970048",
+    "totalRawUsd": "144728887.5615319908",
+    "totalMarginUsed": "14048130.2669159994"
+  },
+  "crossMarginSummary": {
+    "accountValue": "16658111.2564070001",
+    "totalNtlPos": "124964370.2794000059",
+    "totalRawUsd": "141622481.5358070135",
+    "totalMarginUsed": "11279665.0374880005"
+  },
+  "crossMaintenanceMarginUsed": "4794928.4069729997",
+  "withdrawable": "2080046.368919",
+  "assetPositions": [
+    {
+      "type": "oneWay",
+      "position": {
+        "coin": "CASHCAT",
+        "szi": "-5600517.0",
+        "leverage": {
+          "type": "isolated",
+          "value": 3,
+          "rawUsd": "3106406.0257250001"
+        },
+        "entryPx": "0.116438",
+        "positionValue": "337940.796297",
+        "unrealizedPnl": "314177.033249",
+        "returnOnEquity": "1.4453386444",
+        "liquidationPx": "0.475426418",
+        "marginUsed": "2768465.2294279998",
+        "maxLeverage": 3,
+        "cumFunding": {
+          "allTime": "-105455.704763",
+          "sinceOpen": "-105455.704763",
+          "sinceChange": "-58487.740739"
+        }
+      }
+    },
+    {
+      "type": "oneWay",
+      "position": {
+        "coin": "BTC",
+        "szi": "-436.0",
+        "leverage": {
+          "type": "cross",
+          "value": 20
+        },
+        "entryPx": "77001.5",
+        "positionValue": "32194676.0",
+        "unrealizedPnl": "1378020.1829210001",
+        "returnOnEquity": "0.8209171974",
+        "liquidationPx": "178996.3486331249",
+        "marginUsed": "1609733.8",
+        "maxLeverage": 40,
+        "cumFunding": {
+          "allTime": "-3427902.336354",
+          "sinceOpen": "-3290577.6703869998",
+          "sinceChange": "-349389.298273"
+        }
+      }
+    }
+  ],
+  "time": 1794382651420
+}
