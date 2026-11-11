@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 
+import { useDisplayName } from "@/hooks/useNames";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { shortAddress } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 /** The followed traders as chips. Renders nothing while the watchlist is empty. */
 export function WatchingStrip() {
@@ -20,18 +21,36 @@ export function WatchingStrip() {
       </span>
       <ul className="flex min-w-0 gap-1.5 overflow-x-auto">
         {addresses.map((address) => (
-          <li key={address} className="shrink-0">
-            <Link
-              href={`/trader/${address}`}
-              prefetch={false}
-              title={address}
-              className="inline-flex h-6 items-center rounded-sm border px-2 font-mono text-2xs text-foreground transition-colors hover:border-border-strong hover:text-brand"
-            >
-              {shortAddress(address)}
-            </Link>
-          </li>
+          <WatchingChip key={address} address={address} />
         ))}
       </ul>
+      <Link
+        href="/watchlist"
+        prefetch={false}
+        className="ml-auto shrink-0 rounded-sm text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+      >
+        Manage
+      </Link>
     </nav>
+  );
+}
+
+/** One followed trader. It shows a name when the home page lookup found one. */
+function WatchingChip({ address }: { address: string }) {
+  const name = useDisplayName(address);
+  return (
+    <li className="shrink-0">
+      <Link
+        href={`/trader/${address}`}
+        prefetch={false}
+        title={address}
+        className={cn(
+          "inline-flex h-6 max-w-[10rem] items-center rounded-sm border px-2 text-2xs text-foreground transition-colors hover:border-border-strong hover:text-brand",
+          name.source === "address" ? "font-mono" : "font-medium",
+        )}
+      >
+        <span className="truncate">{name.label}</span>
+      </Link>
+    </li>
   );
 }

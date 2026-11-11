@@ -7,6 +7,9 @@ import { parseWsMessage, type AllMidsMessage, type UserFillsMessage } from "./sc
  *   every active subscription again after a reconnect.
  * - A ping goes out every 50 s, because the server closes idle sockets.
  * - The socket closes 5 s after the last subscriber leaves.
+ * - The server sends a userFills snapshot only once per subscription. The
+ *   socket keeps it (plus later live fills) and replays it to a handler that
+ *   joins an existing subscription, so every subscriber sees the history.
  * Components never use this class directly. They use the hooks in hooks/.
  */
 
@@ -28,7 +31,12 @@ type InternalHandler = (message: ChannelMessage) => void;
 interface Entry {
   subscription: Subscription;
   handlers: Set<InternalHandler>;
+  /** The last userFills snapshot, with the live fills that came after it. */
+  snapshot?: UserFillsMessage;
 }
+
+/** The server snapshot holds at most 2,000 fills; the replay keeps the same cap. */
+export const MAX_REPLAY_FILLS = 2_000;
 
 /** The parts of the browser WebSocket that this class uses. */
 export interface SocketLike {
@@ -121,6 +129,13 @@ export class HyperliquidSocket {
     this.ensureConnected();
 
     let active = true;
+    const snapshot = entry.snapshot;
+    if (snapshot) {
+      // Replay after subscribe returns, as a server message would arrive.
+      queueMicrotask(() => {
+        if (active) HyperliquidSocket.deliver(internal, snapshot);
+      });
+    }
     return () => {
       if (!active) return;
       active = false;
@@ -182,6 +197,26 @@ export class HyperliquidSocket {
     return (message) => {
       if (message.channel === "userFills") typed(message);
     };
+  }
+
+  private static deliver(handler: InternalHandler, message: ChannelMessage): void {
+    try {
+      handler(message);
+    } catch (error) {
+      console.error("[ws] A subscription handler failed.", error);
+    }
+  }
+
+  /** Keep the snapshot of a userFills entry up to date for late subscribers. */
+  private static remember(entry: Entry, message: UserFillsMessage): void {
+    if (message.isSnapshot) {
+      entry.snapshot = message;
+    } else if (entry.snapshot) {
+      entry.snapshot = {
+        ...entry.snapshot,
+        fills: [...message.fills, ...entry.snapshot.fills].slice(0, MAX_REPLAY_FILLS),
+      };
+    }
   }
 
   private release(key: string, handler: InternalHandler): void {
@@ -266,13 +301,8 @@ export class HyperliquidSocket {
 
     const entry = this.entries.get(key);
     if (!entry) return;
-    for (const handler of [...entry.handlers]) {
-      try {
-        handler(message);
-      } catch (error) {
-        console.error("[ws] A subscription handler failed.", error);
-      }
-    }
+    if (message.channel === "userFills") HyperliquidSocket.remember(entry, message);
+    for (const handler of [...entry.handlers]) HyperliquidSocket.deliver(handler, message);
   }
 
   private warnInvalid(data: string): void {

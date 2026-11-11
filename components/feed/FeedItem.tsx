@@ -2,10 +2,13 @@ import Link from "next/link";
 import { memo } from "react";
 
 import { CopyTradeButton } from "@/components/copy-trade/CopyTradeButton";
+import { AssetIcon } from "@/components/shared/AssetIcon";
+import { BookmarkButton } from "@/components/shared/BookmarkButton";
 import { Side } from "@/components/shared/Side";
 import type { FeedItem as FeedItemData } from "@/lib/calc/aggregateFills";
+import { useDisplayName } from "@/hooks/useNames";
 import { describeFillAction, sideLabel } from "@/lib/calc/fillAction";
-import { formatPrice, formatSize, formatUsd, shortAddress } from "@/lib/format";
+import { formatPrice, formatSize, formatUsd } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { RelativeTime } from "./RelativeTime";
@@ -31,42 +34,53 @@ export const FeedItem = memo(function FeedItem({
   const action = describeFillAction(item.dir);
   const badge = sideLabel(action, item.side);
   const copySide = isPerpCoin(item.coin) ? action.positionSide : null;
+  const trader = useDisplayName(item.user, name);
   return (
     <li
       data-testid="feed-item"
       data-live={item.live ? "true" : "false"}
       className={cn(
-        "flex min-h-10 items-center gap-1.5 border-b px-3 py-1.5 transition-colors hover:bg-surface-hover sm:gap-2",
+        "flex min-h-10 items-center gap-1 border-b px-2 py-1.5 transition-colors hover:bg-surface-hover sm:gap-2 sm:px-3",
         item.live && "motion-safe:animate-slide-in",
       )}
     >
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-        <div className="flex min-w-0 items-center gap-1.5 text-xs sm:gap-2">
-          <Side label={badge.label} tone={badge.tone} />
+        <div className="flex min-w-0 items-center gap-1 text-xs sm:gap-2">
+          {/* 40 px on mobile, so the star and the Copy button fit at 375 px. */}
+          <Side label={badge.label} tone={badge.tone} className="w-10 px-0.5 sm:w-11 sm:px-1" />
           <Link
             href={`/trader/${item.user}`}
             prefetch={false}
             title={item.user}
             className={cn(
               "max-w-[8rem] shrink-0 truncate rounded-sm text-foreground hover:text-brand",
-              name ? "font-medium" : "font-mono",
+              trader.source === "address" ? "font-mono" : "font-medium",
             )}
           >
-            {name ?? shortAddress(item.user)}
+            {trader.label}
           </Link>
-          {/* The phrase truncates first, so the coin stays visible on narrow screens. */}
-          <span className="flex min-w-0 items-baseline gap-1">
-            <span className="min-w-0 truncate text-muted-foreground">
+          {/*
+            The phrase truncates first (shrink factor 1000). Only when the phrase is
+            gone does the coin truncate, so it never runs into the notional.
+          */}
+          <span className="flex min-w-0 items-center gap-0.5 sm:gap-1">
+            <span className="min-w-0 shrink-[1000] truncate text-muted-foreground">
               <span className="sm:hidden">{action.verb}</span>
               <span className="hidden sm:inline">{action.phrase}</span>
             </span>
-            <span className="shrink-0 font-medium text-foreground">{item.coin}</span>
+            <span
+              title={item.coin}
+              className="inline-flex min-w-0 items-center gap-0.5 font-medium text-foreground sm:gap-1"
+            >
+              <AssetIcon coin={item.coin} />
+              <span className="min-w-0 truncate">{item.coin}</span>
+            </span>
           </span>
           <span className="ml-auto shrink-0 font-mono text-foreground">
             {formatUsd(item.notional, { compact: true })}
           </span>
         </div>
-        <div className="flex min-w-0 items-center gap-2 pl-[50px] font-mono text-2xs text-muted-foreground sm:pl-[52px]">
+        <div className="flex min-w-0 items-center gap-2 pl-[44px] font-mono text-2xs text-muted-foreground sm:pl-[52px]">
           <span className="truncate">
             {formatSize(item.sz)} @ {formatPrice(item.px)}
           </span>
@@ -82,17 +96,21 @@ export const FeedItem = memo(function FeedItem({
           <RelativeTime time={item.time} className="ml-auto shrink-0 font-sans text-faint" />
         </div>
       </div>
-      {copySide ? (
-        <CopyTradeButton
-          coin={item.coin}
-          side={copySide}
-          fallbackMarkPx={item.px}
-          className="w-10 px-0 sm:w-11"
-        />
-      ) : (
-        // Keeps the columns aligned with rows that have a button.
-        <span aria-hidden="true" className="w-10 shrink-0 sm:w-11" />
-      )}
+      <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+        {copySide ? (
+          <CopyTradeButton
+            coin={item.coin}
+            side={copySide}
+            fallbackMarkPx={item.px}
+            className="w-8 px-0 sm:w-11"
+          />
+        ) : (
+          // Keeps the columns aligned with rows that have a button.
+          <span aria-hidden="true" className="w-8 shrink-0 sm:w-11" />
+        )}
+        {/* The same 24 px height as the Copy button. */}
+        <BookmarkButton address={item.user} size="icon-xs" />
+      </div>
     </li>
   );
 });

@@ -53,7 +53,7 @@ export function LeaderboardTable({ className }: { className?: string }) {
         <caption className="sr-only">Top traders by PnL. Select a column header to sort.</caption>
         <thead className="sticky top-0 z-10 bg-background">
           <tr className="h-8 border-b text-2xs tracking-wide text-muted-foreground uppercase">
-            <th scope="col" className="px-2 text-left font-normal sm:px-3">
+            <th scope="col" className="px-1.5 text-left font-normal sm:px-3">
               #
             </th>
             <th scope="col" className="px-2 text-left font-normal sm:px-3">
@@ -67,7 +67,16 @@ export function LeaderboardTable({ className }: { className?: string }) {
               className="hidden sm:table-cell"
             />
             <SortableHeader label="PnL" sortKey="pnl" sort={sort} onSort={onSort} />
-            <SortableHeader label="ROI" sortKey="roi" sort={sort} onSort={onSort} />
+            <SortableHeader
+              label="ROI"
+              sortKey="roi"
+              sort={sort}
+              onSort={onSort}
+              className="pr-1 pl-1 sm:px-3"
+            />
+            <th scope="col" className="w-7 sm:w-9">
+              <span className="sr-only">Track</span>
+            </th>
           </tr>
         </thead>
         <tbody data-testid="leaderboard-rows">
@@ -159,6 +168,7 @@ function SkeletonRow() {
       <td className="px-2 sm:px-3">
         <Skeleton className="ml-auto h-3 w-12" />
       </td>
+      <td />
     </tr>
   );
 }

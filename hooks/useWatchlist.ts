@@ -67,6 +67,20 @@ function toggle(address: string): void {
   notify();
 }
 
+function isWatched(address: string): boolean {
+  return getSnapshot().includes(address.toLowerCase());
+}
+
+/** Add an address. Does nothing when it is already in the list. */
+function add(address: string): void {
+  if (!isWatched(address)) toggle(address);
+}
+
+/** Remove an address. Does nothing when it is not in the list. */
+function remove(address: string): void {
+  if (isWatched(address)) toggle(address);
+}
+
 /** The followed addresses (lower-case) and helpers to change the list. */
 export function useWatchlist() {
   const addresses = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -74,5 +88,16 @@ export function useWatchlist() {
     (address: string) => addresses.includes(address.toLowerCase()),
     [addresses],
   );
-  return { addresses, isFollowing, toggle };
+  return { addresses, isFollowing, toggle, add, remove };
 }
+
+/**
+ * True when one address is in the watchlist. The snapshot is a boolean, so
+ * a row re-renders only when its own address is added or removed.
+ */
+export function useIsWatched(address: string): boolean {
+  const getAddressSnapshot = useCallback(() => isWatched(address), [address]);
+  return useSyncExternalStore(subscribe, getAddressSnapshot, () => false);
+}
+
+export { toggle as toggleWatched };

@@ -130,6 +130,57 @@ describe("HyperliquidSocket", () => {
     expect(fills.mock.calls[0]?.[0]).toMatchObject({ isSnapshot: false, fills: [{ px: 100.5 }] });
   });
 
+  it("replays the snapshot and later live fills to a handler that joins late", async () => {
+    const { client, last } = setup();
+    const early = vi.fn();
+    client.subscribe({ type: "userFills", user: USER }, early);
+    last().open();
+    last().receive({
+      channel: "userFills",
+      data: { user: USER.toLowerCase(), isSnapshot: true, fills: [fill] },
+    });
+    last().receive({
+      channel: "userFills",
+      data: { user: USER.toLowerCase(), fills: [{ ...fill, tid: 3, time: 2 }] },
+    });
+
+    const late = vi.fn();
+    client.subscribe({ type: "userFills", user: USER }, late);
+    // The replay waits for a microtask, like a message from the server.
+    expect(late).not.toHaveBeenCalled();
+    await Promise.resolve();
+    expect(late).toHaveBeenCalledTimes(1);
+    expect(late.mock.calls[0]?.[0]).toMatchObject({
+      isSnapshot: true,
+      fills: [{ tid: 3 }, { tid: 2 }],
+    });
+    // The first handler gets no second copy.
+    expect(early).toHaveBeenCalledTimes(2);
+    // Only one subscribe went to the server.
+    expect(last().sent.filter((entry) => JSON.stringify(entry).includes("userFills"))).toHaveLength(
+      1,
+    );
+  });
+
+  it("does not replay to a handler that unsubscribes at once, or before a snapshot", async () => {
+    const { client, last } = setup();
+    client.subscribe({ type: "userFills", user: USER }, () => {});
+    last().open();
+    const beforeSnapshot = vi.fn();
+    client.subscribe({ type: "userFills", user: USER }, beforeSnapshot);
+    await Promise.resolve();
+    expect(beforeSnapshot).not.toHaveBeenCalled();
+
+    last().receive({
+      channel: "userFills",
+      data: { user: USER.toLowerCase(), isSnapshot: true, fills: [fill] },
+    });
+    const gone = vi.fn();
+    client.subscribe({ type: "userFills", user: USER }, gone)();
+    await Promise.resolve();
+    expect(gone).not.toHaveBeenCalled();
+  });
+
   it("drops invalid messages with one warning", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { client, last } = setup();
