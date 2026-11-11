@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowDownRightIcon, ArrowUpRightIcon } from "lucide-react";
+import { ArrowDownRightIcon, ArrowUpRightIcon, XIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { AssetIcon } from "@/components/shared/AssetIcon";
 import { Price } from "@/components/shared/Price";
-import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { SheetClose, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import {
   SIZE_MAX_USD,
@@ -35,13 +36,46 @@ export function formatSizeUsd(value: number): string {
   return `$${sizeInputFormat.format(value)}`;
 }
 
-export function CopyTradeHeader({ badge }: { badge: ReactNode }) {
+/*
+ * The bottom sheet frame. The sheet box is a column that does not scroll.
+ * The header (52 px) and the footer keep their size, and only the body in
+ * between scrolls, so the close button and the confirm button stay on
+ * screen on short viewports. Pass `showCloseButton={false}` to SheetContent:
+ * the close button lives in the header row instead.
+ */
+export const SHEET_CONTENT_CLASS =
+  "mx-auto flex max-h-[92dvh] w-full max-w-[480px] flex-col gap-0 overflow-hidden pb-[env(safe-area-inset-bottom)]";
+export const SHEET_BODY_CLASS =
+  "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-4";
+export const SHEET_FOOTER_CLASS = "shrink-0 gap-2 border-t px-4 pt-3 pb-4";
+
+/** The fixed 52 px header row: title, badge, and the close button on the right. */
+export function SheetBar({ title, badge }: { title: string; badge?: ReactNode }) {
   return (
-    <SheetHeader className="h-[52px] flex-row items-center gap-2 border-b px-4 py-0 pr-12">
-      <SheetTitle>Copy trade</SheetTitle>
+    <SheetHeader
+      data-testid="sheet-header"
+      className="h-[52px] shrink-0 flex-row items-center gap-2 border-b py-0 pr-2 pl-4"
+    >
+      <SheetTitle className="truncate">{title}</SheetTitle>
       {badge}
+      <SheetClose asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="ml-auto shrink-0"
+          data-testid="sheet-close"
+        >
+          <XIcon aria-hidden="true" />
+          <span className="sr-only">Close</span>
+        </Button>
+      </SheetClose>
     </SheetHeader>
   );
+}
+
+export function CopyTradeHeader({ badge }: { badge: ReactNode }) {
+  return <SheetBar title="Copy trade" badge={badge} />;
 }
 
 export function AssetRow({

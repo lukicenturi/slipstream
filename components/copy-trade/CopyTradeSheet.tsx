@@ -28,6 +28,9 @@ import {
   CopySummary,
   CopyTradeHeader,
   LeverageField,
+  SHEET_BODY_CLASS,
+  SHEET_CONTENT_CLASS,
+  SHEET_FOOTER_CLASS,
   SizeField,
 } from "./CopyTradeFields";
 import type { CopyTradePrefill } from "./CopyTradeProvider";
@@ -63,7 +66,8 @@ export function CopyTradeSheet({
         data-testid="copy-trade-sheet"
         data-mode={TRADING_ENABLED ? NETWORK : "demo"}
         onCloseAutoFocus={onCloseAutoFocus}
-        className="mx-auto max-h-[92dvh] w-full max-w-[480px] gap-0 overflow-y-auto pb-[env(safe-area-inset-bottom)]"
+        showCloseButton={false}
+        className={SHEET_CONTENT_CLASS}
       >
         {prefill ? (
           TRADING_ENABLED ? (
@@ -107,7 +111,7 @@ function DemoCopyTradeForm({ prefill, onDone }: { prefill: CopyTradePrefill; onD
         Set a side, a size and a leverage to see estimates. This is a demo. No order is placed.
       </SheetDescription>
 
-      <div className="flex flex-col gap-3 p-4">
+      <div className={SHEET_BODY_CLASS}>
         <AssetRow coin={coin} sideName={`${id}-side`} side={side} onSideChange={setSide} />
         <SizeField id={id} value={sizeUsd} onChange={setSizeUsd} />
         <LeverageField value={leverage} max={maxLeverage} onChange={setLeverage} />
@@ -125,7 +129,7 @@ function DemoCopyTradeForm({ prefill, onDone }: { prefill: CopyTradePrefill; onD
         </p>
       </div>
 
-      <SheetFooter className="border-t px-4 pt-3 pb-4">
+      <SheetFooter className={SHEET_FOOTER_CLASS}>
         <Button
           type="button"
           size="lg"

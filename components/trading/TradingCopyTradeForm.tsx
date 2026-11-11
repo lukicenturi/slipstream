@@ -1,6 +1,5 @@
 "use client";
 
-import { ExternalLinkIcon, Loader2Icon } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -10,6 +9,8 @@ import {
   CopyTradeHeader,
   formatSizeUsd,
   LeverageField,
+  SHEET_BODY_CLASS,
+  SHEET_FOOTER_CLASS,
   SizeField,
   SummaryRow,
 } from "@/components/copy-trade/CopyTradeFields";
@@ -32,13 +33,10 @@ import { DEFAULT_SIZE_USD, initialLeverage, resolveMaxLeverage } from "@/lib/cal
 import { estimateLiquidation, estimateMargin } from "@/lib/calc/liquidation";
 import { EMPTY_VALUE, formatPrice, formatSize, formatUsd } from "@/lib/format";
 import type { PerpAsset, PositionSide } from "@/lib/hyperliquid/schemas";
-import { explorerAddressUrl } from "@/lib/network";
-import { agentRemainingMs, formatRemaining, type StoredAgent } from "@/lib/trading/agent";
 import {
   MIN_ORDER_USD,
   NETWORK,
   networkLabel,
-  TRADING,
   TRADING_LIMITS,
   type Network,
 } from "@/lib/trading/config";
@@ -56,6 +54,17 @@ import { cn } from "@/lib/utils";
 
 import { ConnectWalletPopover } from "./ConnectWallet";
 import { NetworkBadge } from "./NetworkBadge";
+import {
+  AgentBlock,
+  ErrorNotice,
+  FundsLink,
+  LINK,
+  PrimaryButton,
+  QUIET_LINK,
+  ResultNotice,
+  RiskPanel,
+  Spinner,
+} from "./TradingParts";
 import { TradingSteps } from "./TradingSteps";
 
 /** The label of the one button that sends an order. */
@@ -70,10 +79,6 @@ const PHASE_LABEL: Record<Exclude<OrderPhase, null>, string> = {
 
 /** The trading sheet moves the size in steps of $10 (the exchange minimum). */
 const SIZE_STEP_USD = 10;
-
-const LINK = "rounded-sm text-brand underline underline-offset-2 hover:text-foreground";
-const QUIET_LINK =
-  "rounded-sm text-muted-foreground underline underline-offset-2 hover:text-foreground";
 
 /**
  * The copy-trade form of a trading build, on the build's network (mainnet
@@ -288,7 +293,7 @@ export default function TradingCopyTradeForm({
           : "Copy this trade on Hyperliquid testnet with test funds. Connect a wallet, approve a testnet agent once, review the order, then place it."}
       </SheetDescription>
 
-      <div className="flex flex-col gap-3 p-4">
+      <div className={SHEET_BODY_CLASS}>
         <AssetRow coin={coin} sideName={`${id}-side`} side={side} onSideChange={setSide} />
         <SizeField
           id={id}
@@ -352,7 +357,7 @@ export default function TradingCopyTradeForm({
         </section>
       </div>
 
-      <SheetFooter className="gap-2 border-t px-4 pt-3 pb-4">
+      <SheetFooter className={SHEET_FOOTER_CLASS}>
         {primary}
         {step === 3 && blockReason ? (
           <p
@@ -380,40 +385,6 @@ export default function TradingCopyTradeForm({
         ) : null}
       </SheetFooter>
     </>
-  );
-}
-
-function PrimaryButton({ className, ...props }: React.ComponentProps<typeof Button>) {
-  return (
-    <Button
-      type="button"
-      size="lg"
-      data-testid="copy-confirm"
-      className={className ?? "h-10 w-full text-sm font-semibold"}
-      {...props}
-    />
-  );
-}
-
-function Spinner() {
-  return <Loader2Icon aria-hidden="true" className="size-4 motion-safe:animate-spin" />;
-}
-
-/** The faucet on testnet; on mainnet a link to deposit on Hyperliquid. */
-function FundsLink({ label }: { label?: string }) {
-  const href = TRADING.faucetUrl ?? TRADING.appUrl;
-  const text = label ?? (TRADING.faucetUrl ? "Get test USDC" : "Deposit on Hyperliquid");
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      data-testid="funds-link"
-      className={LINK}
-    >
-      {text}
-      <span className="sr-only"> (opens in a new tab)</span>
-    </a>
   );
 }
 
@@ -587,88 +558,6 @@ function ReviewCard({
   );
 }
 
-/** Mainnet only: the one-time risk acknowledgement before the first approval. */
-function RiskPanel({
-  id,
-  checked,
-  onCheckedChange,
-}: {
-  id: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  return (
-    <div
-      id={`${id}-risk`}
-      data-testid="risk-panel"
-      className="flex flex-col gap-2 rounded-sm border border-brand/40 bg-brand-dim px-2.5 py-2 text-2xs text-foreground"
-    >
-      <p className="font-medium">Before you trade on mainnet</p>
-      <ul className="flex list-disc flex-col gap-0.5 pl-4 text-muted-foreground">
-        <li>Orders use real funds on Hyperliquid mainnet. A loss is real.</li>
-        <li>
-          The agent key lives in this browser for 24 h. Anyone with access to this browser profile
-          can trade with it. It cannot withdraw.
-        </li>
-        <li>Slipstream is unofficial, unaudited software. It gives no financial advice.</li>
-      </ul>
-      <label className="flex cursor-pointer items-center gap-2 text-xs">
-        <input
-          type="checkbox"
-          data-testid="risk-checkbox"
-          checked={checked}
-          onChange={(event) => onCheckedChange(event.target.checked)}
-          className="size-3.5 accent-(--color-brand)"
-        />
-        I understand
-      </label>
-    </div>
-  );
-}
-
-function AgentBlock({
-  agent,
-  now,
-  onForget,
-}: {
-  agent: StoredAgent;
-  now: number;
-  onForget: () => void;
-}) {
-  return (
-    <div data-testid="agent-block" className="flex flex-col gap-1 text-2xs text-faint">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <span data-testid="agent-expiry" className="text-muted-foreground">
-          Agent key expires in {formatRemaining(agentRemainingMs(agent, now))}
-        </span>
-        <span className="flex items-center gap-3">
-          <button
-            type="button"
-            data-testid="forget-agent"
-            onClick={onForget}
-            className={QUIET_LINK}
-          >
-            Forget agent
-          </button>
-          <a
-            href={`${TRADING.appUrl}/API`}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="revoke-agent"
-            className={QUIET_LINK}
-          >
-            Revoke on Hyperliquid<span className="sr-only"> (opens in a new tab)</span>
-          </a>
-        </span>
-      </div>
-      <p>
-        The agent key lives only in this browser. It trades on {NETWORK} for this account and cannot
-        withdraw. Forget agent removes it here; revoke it on Hyperliquid to end it on the exchange.
-      </p>
-    </div>
-  );
-}
-
 function StepText({ step, network }: { step: 1 | 2 | 3; network: Network }) {
   if (step === 1) {
     return (
@@ -689,85 +578,6 @@ function StepText({ step, network }: { step: 1 | 2 | 3; network: Network }) {
   return (
     <p className="text-2xs text-muted-foreground">
       An IOC order at 1% through the {network} mid. Minimum $10. You review it before it is sent.
-    </p>
-  );
-}
-
-function ErrorNotice({ error }: { error: TradingError }) {
-  const exchangeText =
-    error.exchangeMessage && error.exchangeMessage !== error.message ? error.exchangeMessage : null;
-  return (
-    <div role="alert" data-testid="trading-error" data-kind={error.kind} className="text-2xs">
-      <p className="text-short">
-        {error.message}
-        {error.kind === "unfunded" ? (
-          <>
-            {" "}
-            <FundsLink
-              label={TRADING.faucetUrl ? "Get test USDC from the faucet" : "Deposit on Hyperliquid"}
-            />
-          </>
-        ) : null}
-      </p>
-      {exchangeText ? (
-        <p data-testid="trading-error-exchange" className="mt-0.5 font-mono break-all text-faint">
-          Exchange: {exchangeText}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function ResultNotice({
-  result,
-  coin,
-  address,
-}: {
-  result: OrderResult;
-  coin: string;
-  address: string | undefined;
-}) {
-  if (result.kind === "error") {
-    return (
-      <p role="alert" data-testid="order-result" data-kind="error" className="text-2xs text-short">
-        {result.message}
-      </p>
-    );
-  }
-  if (result.kind === "resting") {
-    return (
-      <p
-        role="status"
-        data-testid="order-result"
-        data-kind="resting"
-        className="text-2xs text-foreground"
-      >
-        Order resting (oid {result.oid}).
-      </p>
-    );
-  }
-  return (
-    <p
-      role="status"
-      data-testid="order-result"
-      data-kind="filled"
-      className="flex items-center justify-between gap-2 font-mono text-2xs text-long"
-    >
-      <span>
-        Filled {formatSize(result.totalSz)} {displaySymbol(coin)} at {formatPrice(result.avgPx)}
-      </span>
-      {address ? (
-        <a
-          href={explorerAddressUrl(address)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 font-sans text-muted-foreground underline underline-offset-2 hover:text-foreground"
-        >
-          Explorer
-          <ExternalLinkIcon aria-hidden="true" className="size-3" />
-          <span className="sr-only"> (opens in a new tab)</span>
-        </a>
-      ) : null}
     </p>
   );
 }
