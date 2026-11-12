@@ -3,10 +3,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
-import { ClosePositionProvider } from "@/components/close-position/ClosePositionProvider";
 import { CopyTradeProvider } from "@/components/copy-trade/CopyTradeProvider";
+import { ManagePositionProvider } from "@/components/manage-position/ManagePositionProvider";
 import { MidsFeeder } from "@/components/providers/MidsFeeder";
 import { PushSync } from "@/components/providers/PushSync";
+import { TradingTrackers } from "@/components/providers/TradingTrackers";
 import { WatchlistTracker } from "@/components/providers/WatchlistTracker";
 import { WalletProviders } from "@/components/trading/WalletProviders";
 import { Toaster } from "@/components/ui/sonner";
@@ -29,14 +30,16 @@ export function Providers({ children }: { children: ReactNode }) {
         <TooltipProvider>
           <MidsFeeder />
           <CopyTradeProvider>
-            {/* The close sheet for your own positions (trading builds only). */}
-            <ClosePositionProvider>
+            {/* The manage sheet for your own positions (trading builds only). */}
+            <ManagePositionProvider>
               {/* Live alerts for followed traders, on every page. */}
               <WatchlistTracker />
               {/* Sends the watchlist to the push Worker when push alerts are on. */}
               <PushSync />
+              {/* Moves trailing stops while a tab is open (trading builds only). */}
+              <TradingTrackers />
               {children}
-            </ClosePositionProvider>
+            </ManagePositionProvider>
           </CopyTradeProvider>
           {/* Toasts sit above the mobile bottom bar (the variable is 0 from lg up). */}
           <Toaster

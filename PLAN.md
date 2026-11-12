@@ -262,6 +262,22 @@ The user asked for mainnet trading at parity with testnet and accepts the risk (
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass; `pnpm build` passes with no variable, with `NEXT_PUBLIC_TRADING_MODE=testnet` and with `NEXT_PUBLIC_TRADING_MODE=mainnet`; the no-variable sheet is still the demo; in both trading builds a fake wallet reaches the network's exchange host for the approval and the order path, the sheet shows the exchange text verbatim, and 375 px has no horizontal scroll.
 
+## Phase 4m: position management (TP/SL, trailing stop, open orders)
+
+In a trading build, the user manages each of their own positions from one sheet, at parity with the basic Hyperliquid position tools (2026-11-12, see DECISIONS.md).
+
+- [x] Fixtures first: `fixtures/frontendOpenOrders.json` and `fixtures/testnet-frontendOpenOrders.json` (real limit and trigger orders), `frontendOpenOrderSchema` and `getFrontendOpenOrders`
+- [x] `lib/trading/tpsl.ts`: trigger side, direction rules against the mid, `buildTriggerOrder` (reduce-only, market, 10 % slippage limit), quick levels, PnL at a price, open order classification
+- [x] `lib/trading/trailing.ts`: config schema and storage key, `initialStop`, `nextTrailingStop` (favourable only, 15 s and 0.1 % throttles), `reconcileTrailing`
+- [x] `lib/trading/openOrders.ts` and `lib/trading/exchange.ts`: `placeTriggerOrders` (`positionTpsl`), `cancelOrders`, `modifyOrder`, cancel and modify responses
+- [x] Hooks: `useOpenOrders`, `useTrailingStops`, `useSetTpsl`, `useCancelOrders`, `useStartTrailing`, `useStopTrailing`
+- [x] `components/providers/TrailingStopTracker.tsx` (lazy, trading builds only) moves the on-chain stop while a tab is open
+- [x] One "Manage position" sheet with the tabs Close, TP / SL and Trailing; the row button is "Manage"
+- [x] `components/account/OpenOrdersPanel.tsx` on `/account` and the own profile: Cancel per order and "Cancel all" per coin
+- [x] README, DECISIONS and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass; `pnpm build` passes in the three modes; in the testnet build a fake wallet and a stand-in agent reach the exchange for the close, the TP/SL (`grouping: "positionTpsl"`, two reduce-only market triggers) and the cancels; the trailing stop sends one `modify` after the mid rises and none after it falls, and ends when its order is gone; the mainnet build sends the same TP/SL body to the mainnet host; 375 px has no horizontal scroll.
+
 ## Phase 5a: push alerts
 
 Alerts reach the user when no Slipstream tab is open. A Cloudflare Worker (`workers/push/`) with a D1 store polls the tracked addresses once a minute and sends Web Push messages; the app's service worker shows them. Free tiers only.

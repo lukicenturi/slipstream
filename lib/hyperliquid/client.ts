@@ -6,6 +6,7 @@ import { HL } from "@/lib/network";
 import {
   allMidsSchema,
   clearinghouseStateSchema,
+  frontendOpenOrdersSchema,
   leaderboardResponseSchema,
   ledgerDexMovesSchema,
   metaSchema,
@@ -18,6 +19,7 @@ import {
   type ClearinghouseState,
   type Fill,
   type LeaderboardResponse,
+  type OpenOrder,
   type PerpAsset,
   type PerpDex,
   type Portfolio,
@@ -62,6 +64,7 @@ export type InfoRequest =
   | { type: "spotClearinghouseState"; user: string }
   | { type: "userNonFundingLedgerUpdates"; user: string; startTime: number }
   | { type: "userFills"; user: string }
+  | { type: "frontendOpenOrders"; user: string }
   | { type: "portfolio"; user: string }
   | { type: "userAbstraction"; user: string }
   | { type: "perpDexs" }
@@ -210,6 +213,18 @@ export function getSpotTokenMap(options: RequestOptions = {}): Promise<SpotToken
 
 export function getUserFills(address: string, options: InfoOptions = {}): Promise<Fill[]> {
   return infoRequest({ type: "userFills", user: address.toLowerCase() }, userFillsSchema, options);
+}
+
+/** The open orders of an address on the main perp exchange, with trigger details. */
+export function getFrontendOpenOrders(
+  address: string,
+  options: InfoOptions = {},
+): Promise<OpenOrder[]> {
+  return infoRequest(
+    { type: "frontendOpenOrders", user: address.toLowerCase() },
+    frontendOpenOrdersSchema,
+    options,
+  );
 }
 
 export function getPortfolio(address: string, options: InfoOptions = {}): Promise<Portfolio> {

@@ -45,6 +45,7 @@ The previous address, https://slipstream-alpha.vercel.app, still works. A link i
 - **Account page.** `/account` shows the connected wallet's account on the network of the host: account value, withdrawable USDC ("USDC available" in a trading build), margin used, live unrealized PnL, positions, balances and fills, the explorer link, and an "Open on Mainnet" or "Open on Testnet" link to the same address on the other host. A trading build also shows the builder-USDC transfer note, and on testnet a faucet link when the wallet has no testnet funds. Without a wallet, the page says: "No wallet? Search any address in the header, or track it in the watchlist." It uses the same queries and the same socket as `/trader/<address>`, so both pages show the same numbers. The page only reads; it sends no exchange request.
 - **Copy-trade sheet.** Each position row and each perp feed row has a "Copy" button. The sheet shows side, size, leverage, the estimated margin and the estimated liquidation price. In a read-only build the confirm button says "Demo, no order is placed"; it shows a toast and does nothing else.
 - **Copy trade on mainnet and testnet (trading builds).** Connect a browser wallet, confirm the risks (mainnet, once per 30 days), approve a Slipstream agent once, set side, size and leverage, press "Review order", then "Place mainnet order" or "Place testnet order". The order is a market-like IOC order on the main perp exchange. See [Trading](#trading).
+- **Manage your positions (trading builds).** Your own positions have a "Manage" button: close all or part, set a take profit and a stop loss (on-chain, reduce-only), or start a trailing stop that Slipstream moves in your favour while a tab is open. `/account` and your own profile list your open orders with Cancel. See [Manage a position](#manage-a-position).
 - **Network switch.** A small pill in the header shows the network of this deployment (`MAINNET` in grey or `TESTNET` in amber) and links to the other deployment. It keeps the current page when the other deployment has it. The footer has the same link. In the testnet build, the leaderboard and feed subtitles also say "Testnet".
 - **Navigation.** Desktop nav links (Leaderboard, Live, Watchlist, Account) in the header and a mobile bottom tab bar with the same four destinations. `Live` is active on `/?view=live` at every width.
 - **Asset icons.** Coin names in the feed, the positions table, the fills list and the sheet have a 16 px icon (24 px in the sheet). Icons come from `app.hyperliquid.xyz/coins/<COIN>.svg`. A coin without an icon (other perp DEXs such as `xyz:NVDA`, spot ids such as `@107`, or a failed image) shows a 2-letter monogram in the same box, so rows keep their height.
@@ -310,31 +311,57 @@ The sheet shows a **MAINNET** or **TESTNET** badge and three steps:
 2. **Agent.** On mainnet, read the risk panel first, tick "I understand" and press "Continue". Then press "Approve agent" and sign once. The browser generates an agent key (a Hyperliquid API wallet). Your signature approves it for 24 h on mainnet or 7 days on testnet.
 3. **Order.** Pick side, size and leverage. The sheet uses the live mid, your balance and the max leverage of the asset on the network. Press "Review order": the review card shows the network, the order, the size in coin and USD, the leverage, the worst fill price, the estimated margin and the estimated liquidation price. "Place mainnet order" or "Place testnet order" sets the leverage when needed and sends an IOC limit order 1 % through the mid. It is the only button that sends an order.
 
-### Close a position
+### Manage a position
 
-Your own positions end with a **Close** button instead of Copy: on `/account`, and on your own profile (`/trader/<your address>`) while that wallet is connected. The close sheet shows the live position (size, entry, mid, unrealized PnL) and a share to close: 25 %, 50 %, 75 %, All, or any value on the slider. "Review close" shows the network, the reduce-only order, the size, the worst fill price and the estimated realized PnL. "Close 50% on mainnet" (or "Close all on testnet") sends one **reduce-only** IOC order 1 % through the mid. Reduce-only means it can only shrink the position, never open or flip it.
+Your own positions end with a **Manage** button instead of Copy: on `/account`, and on your own profile (`/trader/<your address>`) while that wallet is connected. The sheet shows the live position (size, entry, mid, unrealized PnL) and three tabs: **Close**, **TP / SL** and **Trailing**. Each tab has its own review and its own confirm button. Every order in this sheet is **reduce-only**: it can only shrink the position, never open or flip it.
 
-- A close needs the same wallet, risk and agent steps as an order.
-- The per-order size cap does not apply to a close: the cap limits new exposure, and a close only removes it.
-- A partial close must be at least $10. A full close of a smaller position is allowed.
-- Positions on builder perp exchanges show a disabled Close button; close them on Hyperliquid.
+- Each tab needs the same wallet, risk and agent steps as an order.
+- The per-order size cap does not apply here: the cap limits new exposure, and these orders only remove it.
+- Positions on builder perp exchanges show a disabled Manage button; manage them on Hyperliquid.
+
+**Close.** Pick a share to close: 25 %, 50 %, 75 %, All, or any value on the slider. "Review close" shows the network, the order, the size, the worst fill price and the estimated realized PnL. "Close 50% on mainnet" (or "Close all on testnet") sends one reduce-only IOC order 1 % through the mid. A partial close must be at least $10. A full close of a smaller position is allowed.
+
+**TP / SL.** Set a take profit, a stop loss, or both. Type a trigger price or use a quick level (take profit +5, +10, +25 or +50 % from the entry; stop loss −2, −5, −10 or −25 %; the signs flip for a short). The row shows the estimated PnL at the trigger and the current on-chain order with a Cancel button. An empty input leaves that side as it is.
+
+- The orders are position TP/SL orders (`grouping: "positionTpsl"`): on-chain trigger orders for the whole position that follow its size.
+- They trigger on the **mark price** and then send a market order with a **10 % slippage limit** (the same as Hyperliquid's own UI).
+- A long's take profit must be above the current price and its stop loss below it; a short is the mirror. A trigger inside 0.1 % of the price is refused.
+- A new take profit or stop loss replaces the current one. The new order goes out first. Only when the exchange accepts it is the old one cancelled, so the position is never without its stop. If that cancel fails, the sheet says "The old stop loss is still open; cancel it in Open orders."
+
+**Trailing stop.** Pick a distance (1, 2, 5 or 10 %, or 0.5 to 50 %). "Start trailing stop" places an on-chain stop loss at that distance from the mid (reduce-only, market on trigger, 10 % slippage limit, `grouping: "normalTpsl"` with the position size). While a Slipstream tab is open on this device, Slipstream moves that stop with `modify` as the price moves your way: up for a long, down for a short. A real `modify` on a funded account is not yet verified, and the tab says so.
+
+- The stop is on-chain. It protects the position when every tab is closed; it only stops moving.
+- It moves only in your favour, never back. It moves at most every 15 s per coin and only by a step of at least 0.1 % of the price. Before each move, Slipstream reads your open orders once more: the new stop must also be better than the stop on the book, and on the right side of the current price (at least 0.1 % away).
+- With more than one tab open, only one tab moves a stop at a time (a cross-tab lock per coin).
+- Each `modify` carries `a: true`, which the exchange needs for a trigger order. With it, the order that a move replaced can stay open (when its cancel fails). Slipstream keeps the id of that one order, and the next open-orders check cancels exactly that order and says "Removed the old trailing stop order for BTC.". If that cancel fails, one toast says so, and the next check tries again; the stop does not move until the old order is gone. It never cancels any other order, also not a stop loss that you placed by hand.
+- If a `modify` gets no answer (a network error), Slipstream keeps both prices until the next open-orders check shows which stop is on the book. If the book shows neither, the trailing ends. If a move waits for the book for more than 60 s, one toast says "The trailing stop for BTC is waiting for the order book and does not move.".
+- The tab shows the current stop, the high-water mark, the distance, the last update, and "Active in this tab" or "Paused: open the app to resume".
+- "Stop trailing (keep the stop)" leaves the stop where it is. "Stop and cancel the stop order" also cancels it. It reads your open orders first, so right after a move it cancels the moved stop (which can have a new order id) and the order that the move replaced, if that is still open. If the open orders cannot be read, it changes nothing and says "A move is settling, try again in a few seconds." right after a move, else "The open orders could not be read. Try again." The trailing ends only after the cancel succeeds. Both ask once more.
+- When the stop order is gone (filled or cancelled), the trailing ends and a toast says so. This is also the message when the position and the stop are both gone (the stop most likely filled). When the position is closed but its stop is still on the book, the trailing ends with "the position is closed", and the stop order stays in Open orders for you to cancel.
+- Only one trailing stop per coin: a second start says "A trailing stop for BTC already exists.". The TP / SL and Trailing buttons stay disabled with "Loading open orders." until your open orders load.
+- "Close all" in the Close tab also ends the coin's trailing stop and cancels its stop order, and the result says so.
+- An existing stop loss is replaced: the review lists it. The new stop goes out first, then the old one is cancelled. If that cancel fails, the status view says "The old stop loss is still open; cancel it in Open orders."
+
+**Open orders.** `/account` and your own profile list your open orders on the main exchange: limit, take profit, stop loss and trailing stops, with side, size, price, a reduce-only badge and the time placed. Cancel an order with the cross button (it asks once more), or every order of a coin with "Cancel all BTC". The list refreshes every 10 s and right after each action. The "Trailing stop" label follows the stop after a move, also when the move gave it a new order id. When you cancel a trailing stop here, or replace it in the TP / SL tab, Slipstream reads your open orders again first. The same request then cancels the live stop (also when a move gave it a new order id) and the order that its last move left open, if there is one, and the trailing ends. The TP / SL review says "Ends the trailing stop". If the open orders cannot be read, nothing is sent and it says "The open orders could not be read. Try again.". If an extra cancel fails, one toast names the order that is still open.
 
 ### Safeguards
 
-| Safeguard            | Mainnet                         | Testnet |
-| -------------------- | ------------------------------- | ------- |
-| Risk acknowledgement | once, shown again after 30 days | none    |
-| Review step          | before every order              | same    |
-| Per-order size cap   | $500 by default                 | $10,000 |
-| Highest cap allowed  | $50,000                         | $50,000 |
-| Agent key life       | 24 h                            | 7 days  |
-| Worst fill price     | 1 % through the mid             | same    |
+| Safeguard            | Mainnet                                                                                                                 | Testnet |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------- |
+| Risk acknowledgement | once, shown again after 30 days                                                                                         | none    |
+| Review step          | before every order                                                                                                      | same    |
+| Per-order size cap   | $500 by default                                                                                                         | $10,000 |
+| Highest cap allowed  | $50,000                                                                                                                 | $50,000 |
+| Agent key life       | 24 h                                                                                                                    | 7 days  |
+| Worst fill price     | 1 % through the mid                                                                                                     | same    |
+| TP / SL limit        | 10 % through the trigger                                                                                                | same    |
+| Automatic actions    | only a favourable move of the trailing stop, at most every 15 s, and the cancel of the one order that the move replaced | same    |
 
 The cap shows under the size ("Cap $500 per order · change"). "change" opens a small editor; the value is kept in this browser. The slider stops at the cap, or at balance x leverage when that is lower. The order hook also refuses a size above the cap.
 
 ### What the agent key can and cannot do
 
-The agent can set leverage and place and cancel orders for your account on the build's network. It cannot withdraw or transfer funds. It lives only in this browser's `localStorage`, so anyone with access to this browser profile can trade with it until it expires.
+The agent can set leverage and place, modify and cancel orders for your account on the build's network. It cannot withdraw or transfer funds. It lives only in this browser's `localStorage`, so anyone with access to this browser profile can trade with it until it expires.
 
 - "Forget agent" removes it from this browser.
 - "Revoke on Hyperliquid" opens the API page of the network's app (https://app.hyperliquid.xyz/API or https://app.hyperliquid-testnet.xyz/API), where you can remove it on the exchange.
@@ -344,11 +371,12 @@ The agent name is `slipstream valid_until <ms>`. The unit (ms) follows the other
 
 ### What is stored
 
-| Key                                  | Value                                                      |
-| ------------------------------------ | ---------------------------------------------------------- |
-| `slipstream.agent.<network>.<owner>` | the agent key, its address, name, creation and expiry time |
-| `slipstream.trading.<network>`       | the per-order cap (`{ maxOrderUsd }`)                      |
-| `slipstream.mainnetRiskAck`          | the time of the mainnet risk acknowledgement (`{ at }`)    |
+| Key                                     | Value                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `slipstream.agent.<network>.<owner>`    | the agent key, its address, name, creation and expiry time                           |
+| `slipstream.trading.<network>`          | the per-order cap (`{ maxOrderUsd }`)                                                |
+| `slipstream.mainnetRiskAck`             | the time of the mainnet risk acknowledgement (`{ at }`)                              |
+| `slipstream.trailing.<network>.<owner>` | the trailing stops: coin, side, distance, stop oid and price, high-water mark, times |
 
 An agent under the old key `slipstream.testnet.agent.<owner>` moves to the new key once.
 
@@ -427,13 +455,13 @@ All variables are optional. Without them the app works as is, read-only, on main
 
 ```
 app/                 routes: home (?view=live for the feed alone), /trader/[address], /watchlist, /account, /api/leaderboard, /api/resolve, /api/names, /api/spot-meta, /dev
-components/          layout, leaderboard, feed, trader, account, copy-trade, shared, ui (restyled shadcn)
+components/          layout, leaderboard, feed, trader, account, copy-trade, manage-position, trading, providers, shared, ui (restyled shadcn)
 hooks/               data hooks (queries, socket, mids, feed, watchlist, alerts, notices)
 lib/network.ts       the network of the build and every Hyperliquid endpoint
 lib/hyperliquid/     schemas, REST client, socket, mids store, leaderboard trim
 lib/names/           ENS and HL Names resolvers (server-only), schemas, cache, browser client
 lib/calc/            pure business logic with tests
-lib/trading/         trading on both networks: mode guard, limits, orders, agent key, size cap, risk ack, errors, exchange calls
+lib/trading/         trading on both networks: mode guard, limits, orders, TP/SL, trailing stop, open orders, agent key, size cap, risk ack, errors, exchange calls
 lib/push.ts          push alert helpers (subscription body, availability, stored state)
 public/              service worker (sw.js), PWA icons and push badge (icons/), outlined wordmark and monogram (brand/)
 scripts/brand/       generators for the wordmark SVGs and the icon set (run from a scratch folder)

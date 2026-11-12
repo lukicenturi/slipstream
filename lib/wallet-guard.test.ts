@@ -107,6 +107,20 @@ describe("wallet guard", () => {
     expect(files.has("lib/trading/exchange.ts")).toBe(true);
   });
 
+  it("the signing panels of the account and the tracker load only through dynamic imports", () => {
+    // They reach the exchange (self-check), but the wallet account does not reach them.
+    for (const file of [
+      "components/account/OpenOrdersPanel.tsx",
+      "components/providers/TrailingStopTracker.tsx",
+      "components/trading/ManagePositionForm.tsx",
+    ]) {
+      expect(reachable(file).files.has("lib/trading/exchange.ts")).toBe(true);
+    }
+    const { files } = reachable("components/account/WalletAccount.tsx");
+    expect(files.has("components/account/OpenOrdersPanel.tsx")).toBe(false);
+    expect(files.has("components/trading/ManagePositionForm.tsx")).toBe(false);
+  });
+
   it("reads static, re-export and side-effect imports, and skips type-only and dynamic ones", () => {
     const source = [
       'import { a } from "@/lib/a";',

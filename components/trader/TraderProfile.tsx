@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import { BalancesPanel } from "@/components/account/BalancesPanel";
+import { LazyOpenOrdersPanel } from "@/components/account/lazyTrading";
 import { useAccountBalances } from "@/hooks/useAccountBalances";
 import { useConnectedAddress } from "@/hooks/useConnectedAddress";
 import { useTrader } from "@/hooks/useTrader";
@@ -24,7 +25,7 @@ import { TraderHeader } from "./TraderHeader";
  */
 export function TraderProfile({ address }: { address: string }) {
   const { state, fills, portfolio } = useTrader(address);
-  // Your own profile in a trading build: rows offer Close instead of Copy.
+  // Your own profile in a trading build: rows offer Manage instead of Copy.
   const connected = useConnectedAddress();
   const isOwn = TRADING_ENABLED && connected === address;
   const balances = useAccountBalances(address);
@@ -72,9 +73,11 @@ export function TraderProfile({ address }: { address: string }) {
             status={state.status}
             onRetry={() => void state.refetch()}
             className="lg:order-2"
-            action={isOwn ? "close" : "copy"}
+            action={isOwn ? "manage" : "copy"}
             owner={address}
           />
+          {/* Your own profile in a trading build: open orders with Cancel. */}
+          {isOwn ? <LazyOpenOrdersPanel owner={address} className="lg:order-2" /> : null}
           <BalancesPanel balances={balances} className="lg:order-3" />
           {/* Mobile: positions come first. Desktop: the chart row sits above them. */}
           <div className="grid grid-cols-1 gap-4 lg:order-1 lg:grid-cols-12">

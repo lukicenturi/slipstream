@@ -2,9 +2,9 @@
 
 import { memo } from "react";
 
-import { ClosePositionButton } from "@/components/close-position/ClosePositionButton";
 import { CopyTradeButton } from "@/components/copy-trade/CopyTradeButton";
 import { AssetIcon } from "@/components/shared/AssetIcon";
+import { ManagePositionButton } from "@/components/manage-position/ManagePositionButton";
 import { DexBadge } from "@/components/shared/DexBadge";
 import { Price } from "@/components/shared/Price";
 import { Side } from "@/components/shared/Side";
@@ -19,8 +19,8 @@ import { cn } from "@/lib/utils";
 
 const CELL = "px-3 text-right font-mono text-xs whitespace-nowrap";
 
-/** The button at the end of a row: copy someone's trade, close your own, or nothing. */
-export type PositionAction = "copy" | "close" | "none";
+/** The button at the end of a row: copy someone's trade, manage your own, or nothing. */
+export type PositionAction = "copy" | "manage" | "none";
 
 /**
  * One open position. The mark price is the live mid of the coin, read in
@@ -36,9 +36,9 @@ export const PositionRow = memo(function PositionRow({
   position: Position;
   /** The builder exchange of the position, or null for the main exchange. */
   dex?: string | null;
-  /** "close" for your own positions in a trading build; "none" hides the column. */
+  /** "manage" for your own positions in a trading build; "none" hides the column. */
   action?: PositionAction;
-  /** The lower-case address that holds the position (needed to close it). */
+  /** The lower-case address that holds the position (needed to manage it). */
   owner?: string;
 }) {
   const mid = useMid(position.coin);
@@ -98,8 +98,8 @@ export const PositionRow = memo(function PositionRow({
             // pointer events, so the wrapper carries the tooltip.
             <span
               title={
-                action === "close"
-                  ? "Builder exchange: close it on Hyperliquid"
+                action === "manage"
+                  ? "Builder exchange: manage it on Hyperliquid"
                   : "Builder exchange, not supported"
               }
               className="inline-flex"
@@ -109,18 +109,18 @@ export const PositionRow = memo(function PositionRow({
                 variant="outline"
                 size="xs"
                 disabled
-                aria-label={`${action === "close" ? "Close" : "Copy"} ${displaySymbol(position.coin)}: builder exchange, not supported`}
+                aria-label={`${action === "manage" ? "Manage" : "Copy"} ${displaySymbol(position.coin)}: builder exchange, not supported`}
                 data-testid={
-                  action === "close"
-                    ? "close-position-button-disabled"
+                  action === "manage"
+                    ? "manage-position-button-disabled"
                     : "copy-trade-button-disabled"
                 }
               >
-                {action === "close" ? "Close" : "Copy"}
+                {action === "manage" ? "Manage" : "Copy"}
               </Button>
             </span>
-          ) : action === "close" && owner ? (
-            <ClosePositionButton owner={owner} position={position} />
+          ) : action === "manage" && owner ? (
+            <ManagePositionButton owner={owner} position={position} />
           ) : (
             <CopyTradeButton
               coin={position.coin}

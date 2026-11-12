@@ -12,7 +12,7 @@ import type { TradingError } from "@/lib/trading/errors";
 import type { OrderResult } from "@/lib/trading/order";
 
 /*
- * The parts that the copy-trade sheet and the close-position sheet share in
+ * The parts that the copy-trade sheet and the manage-position sheet share in
  * a trading build: the primary button, the risk panel, the agent block and
  * the error and result notices.
  */

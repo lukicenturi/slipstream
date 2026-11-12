@@ -11,6 +11,7 @@ import {
   CloseTooSmallError,
   clampLeverage,
   findAsset,
+  isFullClose,
   leverageUpdate,
   limitPrice,
   orderBlockReason,
@@ -18,7 +19,9 @@ import {
   OrderTooSmallError,
   roundPrice,
   roundSize,
+  summarizeAllOrderStatuses,
   summarizeOrderResponse,
+  summarizeOrdersResponse,
   summarizeOrderStatuses,
 } from "./order";
 
@@ -416,5 +419,49 @@ describe("closePreview", () => {
     };
     expect(closePreview({ ...base, mid: 100_000, fraction: 0.5 })?.sizeCoin).toBeCloseTo(0.000075);
     expect(closePreview({ ...base, mid: 0, fraction: 1 })).toBeNull();
+  });
+});
+
+describe("summarizeAllOrderStatuses and summarizeOrdersResponse", () => {
+  it("gives one result per order, in order", () => {
+    expect(
+      summarizeAllOrderStatuses([
+        { resting: { oid: 11 } },
+        { error: "Invalid TP/SL price. asset=3" },
+        { filled: { totalSz: "0.01", avgPx: "70000.0", oid: 12 } },
+      ]),
+    ).toEqual([
+      { kind: "resting", oid: 11 },
+      { kind: "error", message: "Invalid TP/SL price. asset=3" },
+      { kind: "filled", totalSz: 0.01, avgPx: 70_000, oid: 12 },
+    ]);
+  });
+
+  it("reads a whole body and refuses another shape", () => {
+    const body = {
+      status: "ok",
+      response: { type: "order", data: { statuses: [{ resting: { oid: 424242 } }] } },
+    };
+    expect(summarizeOrdersResponse(body)).toEqual([{ kind: "resting", oid: 424242 }]);
+    expect(summarizeOrdersResponse({ status: "err", response: "x" })).toBeNull();
+    expect(summarizeAllOrderStatuses("bad")).toEqual([
+      { kind: "error", message: "Unknown order status." },
+    ]);
+  });
+});
+
+describe("isFullClose", () => {
+  const filled = { kind: "filled", totalSz: 0.01, avgPx: 74_000, oid: 1 } as const;
+
+  it("is true when all of the position was asked and filled", () => {
+    expect(isFullClose(filled, 1, 0.01)).toBe(true);
+    expect(isFullClose(filled, 1, -0.01)).toBe(true);
+  });
+
+  it("is false for a partial close, a partial fill, or no fill", () => {
+    expect(isFullClose(filled, 0.5, 0.02)).toBe(false);
+    expect(isFullClose({ ...filled, totalSz: 0.006 }, 1, 0.01)).toBe(false);
+    expect(isFullClose({ kind: "resting", oid: 1 }, 1, 0.01)).toBe(false);
+    expect(isFullClose({ kind: "error", message: "No." }, 1, 0.01)).toBe(false);
   });
 });
