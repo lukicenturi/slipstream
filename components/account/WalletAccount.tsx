@@ -8,6 +8,7 @@ import { useConnection } from "wagmi";
 import { AccountValueStat } from "@/components/account/AccountValueStat";
 import { BalancesPanel } from "@/components/account/BalancesPanel";
 import { BuilderUsdcNote } from "@/components/account/BuilderUsdcNote";
+import { LazyOpenOrdersPanel } from "@/components/account/lazyTrading";
 import { Blockie } from "@/components/shared/Blockie";
 import { Stat, STAT_GRID, StatNote, StatValue } from "@/components/shared/Stat";
 import { EmptyState, ErrorState, SkeletonRows } from "@/components/shared/States";
@@ -298,11 +299,12 @@ function ConnectedAccount({ address }: { address: string }) {
         onRetry={() => void account.refetch()}
         title={COPY.positionsTitle}
         titleId="wallet-positions-title"
-        action={TRADING_ENABLED ? "close" : "none"}
+        action={TRADING_ENABLED ? "manage" : "none"}
         owner={address}
         emptyTitle={COPY.positionsEmptyTitle}
         emptyDescription={COPY.positionsEmptyDescription}
       />
+      {TRADING_ENABLED ? <LazyOpenOrdersPanel owner={address} /> : null}
       <BalancesPanel
         balances={balances}
         title={COPY.balancesTitle}

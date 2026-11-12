@@ -413,6 +413,88 @@ export function parseWsMessage(input: unknown): WsMessage | null {
 }
 
 // ---------------------------------------------------------------------------
+// Info: {"type":"frontendOpenOrders","user":"0x..."} (fixtures/frontendOpenOrders.json)
+// ---------------------------------------------------------------------------
+
+/** The order types that Hyperliquid sends today. An unknown type is kept as text. */
+export const KNOWN_ORDER_TYPES = [
+  "Market",
+  "Limit",
+  "Stop Market",
+  "Stop Limit",
+  "Take Profit Market",
+  "Take Profit Limit",
+  "Twap Slice",
+  "Vault Close",
+  "Spot Dust Conversion",
+] as const;
+
+/** One open order of an account on the main perp exchange (children are ignored). */
+export interface OpenOrder {
+  coin: string;
+  side: "buy" | "sell";
+  /** The limit price. For a market trigger order it is the slippage-limited price. */
+  limitPx: number;
+  /** The open size in coin. A position TP/SL has 0: it covers the whole position. */
+  sz: number;
+  origSz: number;
+  oid: number;
+  /** The time the order was placed, in ms. */
+  timestamp: number;
+  isTrigger: boolean;
+  /** The trigger price, or null for an order without a trigger. */
+  triggerPx: number | null;
+  /** "Price below 74222", "Price above 120000" or "N/A". */
+  triggerCondition: string;
+  isPositionTpsl: boolean;
+  reduceOnly: boolean;
+  /** One of KNOWN_ORDER_TYPES, or a new type as Hyperliquid sends it. */
+  orderType: string;
+  /** "Gtc", "Ioc", "Alo", "FrontendMarket", "LiquidationMarket", another text, or null. */
+  tif: string | null;
+  cloid: string | null;
+}
+
+export const frontendOpenOrderSchema = z
+  .object({
+    coin: z.string().min(1),
+    side: z.enum(["B", "A"]),
+    limitPx: numericString,
+    sz: numericString,
+    origSz: numericString,
+    oid: z.number().int().nonnegative(),
+    timestamp: z.number(),
+    isTrigger: z.boolean(),
+    triggerPx: numericString,
+    triggerCondition: z.string(),
+    isPositionTpsl: z.boolean(),
+    reduceOnly: z.boolean(),
+    orderType: z.string(),
+    tif: z.string().nullable(),
+    cloid: z.string().nullable(),
+  })
+  .transform((order): OpenOrder => ({
+    coin: order.coin,
+    side: order.side === "B" ? "buy" : "sell",
+    limitPx: order.limitPx,
+    sz: order.sz,
+    origSz: order.origSz,
+    oid: order.oid,
+    timestamp: order.timestamp,
+    isTrigger: order.isTrigger,
+    // A plain order sends "0.0" as its trigger price.
+    triggerPx: order.isTrigger && order.triggerPx > 0 ? order.triggerPx : null,
+    triggerCondition: order.triggerCondition,
+    isPositionTpsl: order.isPositionTpsl,
+    reduceOnly: order.reduceOnly,
+    orderType: order.orderType,
+    tif: order.tif,
+    cloid: order.cloid,
+  }));
+
+export const frontendOpenOrdersSchema = z.array(frontendOpenOrderSchema);
+
+// ---------------------------------------------------------------------------
 // Info: {"type":"meta"} (used for the testnet universe)
 // ---------------------------------------------------------------------------
 

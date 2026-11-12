@@ -18,46 +18,51 @@ import type { Position } from "@/lib/hyperliquid/schemas";
 import { NETWORK, TRADING_ENABLED } from "@/lib/trading/config";
 
 /*
- * The close-position sheet of a trading build. The form signs orders, so
- * it loads in its own chunk (a dynamic import): the wallet guard follows
- * only static imports, and a read-only build never renders the form.
+ * The manage-position sheet of a trading build (Close, TP / SL, Trailing).
+ * The form signs orders, so it loads in its own chunk (a dynamic import):
+ * the wallet guard follows only static imports, and a read-only build
+ * never renders the form.
  */
-const ClosePositionForm = dynamic(() => import("@/components/trading/ClosePositionForm"), {
+const ManagePositionForm = dynamic(() => import("@/components/trading/ManagePositionForm"), {
   ssr: false,
-  loading: () => <SkeletonRows rows={6} label="Loading the close form" />,
+  loading: () => <SkeletonRows rows={6} label="Loading the manage form" />,
 });
 
-/** The position to close and the address that holds it. */
-export interface CloseTarget {
+export type ManageTab = "close" | "tpsl" | "trailing";
+
+/** The position to manage and the address that holds it. */
+export interface ManageTarget {
   /** The lower-case address that holds the position. */
   owner: string;
   position: Position;
+  /** The tab to open first (Close by default). */
+  tab?: ManageTab;
 }
 
-interface CloseActions {
-  openClosePosition: (target: CloseTarget) => void;
+interface ManageActions {
+  openManagePosition: (target: ManageTarget) => void;
 }
 
-const ClosePositionContext = createContext<CloseActions | null>(null);
+const ManagePositionContext = createContext<ManageActions | null>(null);
 
 interface SheetState {
   open: boolean;
-  target: CloseTarget | null;
+  target: ManageTarget | null;
   /** Changes on every open, so the form starts again. */
   session: number;
 }
 
 /**
- * Holds the one close-position sheet of the app. Mount it once. The
+ * Holds the one manage-position sheet of the app. Mount it once. The
  * context value only holds the stable open function, so memoised position
  * rows do not re-render when the sheet opens. In a read-only build it
  * renders no sheet.
  */
-export function ClosePositionProvider({ children }: { children: ReactNode }) {
+export function ManagePositionProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SheetState>({ open: false, target: null, session: 0 });
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
-  const openClosePosition = useCallback((target: CloseTarget) => {
+  const openManagePosition = useCallback((target: ManageTarget) => {
     const active = document.activeElement;
     returnFocusRef.current = active instanceof HTMLElement ? active : null;
     setState((current) => ({ open: true, target, session: current.session + 1 }));
@@ -67,7 +72,7 @@ export function ClosePositionProvider({ children }: { children: ReactNode }) {
     setState((current) => ({ ...current, open }));
   }, []);
 
-  // The sheet has no Radix trigger, so focus goes back to the Close button by hand.
+  // The sheet has no Radix trigger, so focus goes back to the Manage button by hand.
   const onCloseAutoFocus = useCallback((event: Event) => {
     const target = returnFocusRef.current;
     returnFocusRef.current = null;
@@ -78,23 +83,23 @@ export function ClosePositionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const actions = useMemo(() => ({ openClosePosition }), [openClosePosition]);
+  const actions = useMemo(() => ({ openManagePosition }), [openManagePosition]);
 
   return (
-    <ClosePositionContext value={actions}>
+    <ManagePositionContext value={actions}>
       {children}
       {TRADING_ENABLED ? (
         <Sheet open={state.open} onOpenChange={onOpenChange}>
           <SheetContent
             side="bottom"
-            data-testid="close-position-sheet"
+            data-testid="manage-position-sheet"
             data-mode={NETWORK}
             showCloseButton={false}
             onCloseAutoFocus={onCloseAutoFocus}
             className={SHEET_CONTENT_CLASS}
           >
             {state.target ? (
-              <ClosePositionForm
+              <ManagePositionForm
                 key={state.session}
                 target={state.target}
                 open={state.open}
@@ -102,20 +107,20 @@ export function ClosePositionProvider({ children }: { children: ReactNode }) {
               />
             ) : (
               <>
-                <SheetTitle className="sr-only">Close position</SheetTitle>
+                <SheetTitle className="sr-only">Manage position</SheetTitle>
                 <SheetDescription className="sr-only">No position selected.</SheetDescription>
               </>
             )}
           </SheetContent>
         </Sheet>
       ) : null}
-    </ClosePositionContext>
+    </ManagePositionContext>
   );
 }
 
-/** The function that opens the close sheet. Use it inside `ClosePositionProvider`. */
-export function useClosePositionSheet(): CloseActions["openClosePosition"] {
-  const actions = useContext(ClosePositionContext);
-  if (!actions) throw new Error("useClosePositionSheet must be used inside ClosePositionProvider");
-  return actions.openClosePosition;
+/** The function that opens the manage sheet. Use it inside `ManagePositionProvider`. */
+export function useManagePosition(): ManageActions["openManagePosition"] {
+  const actions = useContext(ManagePositionContext);
+  if (!actions) throw new Error("useManagePosition must be used inside ManagePositionProvider");
+  return actions.openManagePosition;
 }

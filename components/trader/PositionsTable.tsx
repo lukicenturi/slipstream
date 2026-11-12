@@ -13,7 +13,7 @@ import type { QueryStatus } from "./TraderHeader";
  * Open positions, largest first. The table scrolls sideways on narrow
  * screens; the Asset column stays in place. The mark price is the live mid
  * from the shared socket. The account page passes its own title, id and
- * empty texts. Rows end with a Copy button on other traders and a Close
+ * empty texts. Rows end with a Copy button on other traders and a Manage
  * button on your own positions in a trading build. Positions of builder exchanges
  * carry a badge with the exchange name.
  */
@@ -36,9 +36,9 @@ export function PositionsTable({
   className?: string;
   title?: string;
   titleId?: string;
-  /** "copy" on other traders, "close" on your own positions in a trading build, "none" to hide. */
+  /** "copy" on other traders, "manage" on your own positions in a trading build, "none" to hide. */
   action?: PositionAction;
-  /** The lower-case address that holds the positions (for "close"). */
+  /** The lower-case address that holds the positions (for "manage"). */
   owner?: string;
   emptyTitle?: string;
   emptyDescription?: string;

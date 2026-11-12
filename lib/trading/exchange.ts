@@ -4,13 +4,16 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import type { StoredAgent } from "./agent";
 import { assertTradingEnabled, getTradingMode, NETWORK, type Network } from "./config";
-import { toTradingError } from "./errors";
+import { toTradingError, TradingError } from "./errors";
+import { modifyResponseSchema, summarizeCancel, type CancelStatus } from "./openOrders";
 import {
   summarizeOrderResponse,
+  summarizeOrdersResponse,
   summarizeOrderStatuses,
   type IocOrder,
   type OrderResult,
 } from "./order";
+import type { TriggerOrder } from "./tpsl";
 
 /*
  * The only module that talks to Hyperliquid's exchange endpoint.
@@ -131,4 +134,100 @@ export async function placeIocOrder(
     throw toTradingError(error, { agentAddress, network: NETWORK });
   }
   return summarizeOrderResponse(response) ?? summarizeOrderStatuses(null);
+}
+
+/** The raw body that the SDK keeps on an ApiRequestError, or null. */
+function errorBody(error: unknown): unknown {
+  return typeof error === "object" && error !== null && "response" in error ? error.response : null;
+}
+
+/**
+ * Place reduce-only trigger orders (take profit, stop loss) in one request.
+ * Signed by the agent. `"positionTpsl"` makes them follow the position size.
+ * Returns one result per order, in the order sent; a per-order rejection
+ * is a `{ kind: "error" }` entry. Other failures throw a TradingError.
+ */
+export async function placeTriggerOrders(
+  client: TradingClient,
+  orders: readonly TriggerOrder[],
+  grouping: "positionTpsl" | "normalTpsl",
+  agentAddress: string,
+): Promise<OrderResult[]> {
+  assertTradingEnabled(getTradingMode(), NETWORK);
+  // Defence in depth: a trigger order from Slipstream is always reduce-only.
+  if (orders.length === 0 || orders.some((order) => order.r !== true)) {
+    throw new TradingError("api", "Refusing a trigger order that is not reduce-only.");
+  }
+  let response: unknown;
+  try {
+    response = await client.order({ orders: [...orders], grouping });
+  } catch (error) {
+    // The SDK throws when any order has an error; its raw body holds every status.
+    const results = summarizeOrdersResponse(errorBody(error));
+    if (results) return results;
+    throw toTradingError(error, { agentAddress, network: NETWORK });
+  }
+  return summarizeOrdersResponse(response) ?? [summarizeOrderStatuses(null)];
+}
+
+/**
+ * Cancel orders by asset and oid. Signed by the agent. Returns the status
+ * of each cancel, in the order sent ("Order was never placed, already
+ * canceled, or filled." is an error entry). Other failures throw a TradingError.
+ */
+export async function cancelOrders(
+  client: TradingClient,
+  cancels: readonly { a: number; o: number }[],
+  agentAddress: string,
+): Promise<CancelStatus[]> {
+  assertTradingEnabled(getTradingMode(), NETWORK);
+  if (cancels.length === 0) return [];
+  let response: unknown;
+  try {
+    response = await client.cancel({ cancels: [...cancels] });
+  } catch (error) {
+    const statuses = summarizeCancel(errorBody(error));
+    if (statuses) return statuses;
+    throw toTradingError(error, { agentAddress, network: NETWORK });
+  }
+  const statuses = summarizeCancel(response);
+  if (!statuses) throw new TradingError("api", "Unknown cancel response.");
+  return statuses;
+}
+
+/**
+ * Replace one open order in place (the trailing stop update). Signed by
+ * the agent. Only reduce-only trigger orders go through here, so the
+ * request carries `a: true`: the SDK and the exchange refuse a modify to a
+ * trigger order without it. With `a: true`, the new order goes out even
+ * when the cancel of the old one fails, so the caller cleans up a leftover
+ * stop on the next open-orders poll. The body must parse as
+ * `{ status: "ok" }`; an `err` body or any other body throws a TradingError.
+ */
+export async function modifyOrder(
+  client: TradingClient,
+  oid: number,
+  order: TriggerOrder,
+  agentAddress: string,
+): Promise<void> {
+  assertTradingEnabled(getTradingMode(), NETWORK);
+  if (order.r !== true) {
+    throw new TradingError("api", "Refusing a modify that is not reduce-only.");
+  }
+  let response: unknown;
+  try {
+    response = await client.modify({ oid, order, a: true });
+  } catch (error) {
+    throw toTradingError(error, { agentAddress, network: NETWORK });
+  }
+  const parsed = modifyResponseSchema.safeParse(response);
+  if (!parsed.success) throw new TradingError("api", "Unknown modify response.");
+  if (parsed.data.status === "err") {
+    // The same mapping as a thrown SDK error, so an unknown agent still reads as "agent".
+    const body = parsed.data;
+    throw toTradingError(
+      { name: "ApiRequestError", message: body.response, response: body },
+      { agentAddress, network: NETWORK },
+    );
+  }
 }

@@ -309,6 +309,23 @@ export function summarizeOrderStatuses(statuses: unknown): OrderResult {
   return { kind: "error", message: status.error };
 }
 
+/** The result of every order in a response, in the order they were sent. */
+export function summarizeAllOrderStatuses(statuses: unknown): OrderResult[] {
+  const parsed = OrderStatusesSchema.safeParse(statuses);
+  if (!parsed.success) return [{ kind: "error", message: "Unknown order status." }];
+  return parsed.data.map((status): OrderResult => {
+    if ("filled" in status) return { kind: "filled", ...status.filled };
+    if ("resting" in status) return { kind: "resting", oid: status.resting.oid };
+    return { kind: "error", message: status.error };
+  });
+}
+
+/** Summarise every order of a raw order response body, or null when it is not one. */
+export function summarizeOrdersResponse(body: unknown): OrderResult[] | null {
+  const parsed = orderResponseSchema.safeParse(body);
+  return parsed.success ? summarizeAllOrderStatuses(parsed.data.response.data.statuses) : null;
+}
+
 /** Summarise a raw order response body, or null when it is not an order response. */
 export function summarizeOrderResponse(body: unknown): OrderResult | null {
   const parsed = orderResponseSchema.safeParse(body);
@@ -364,4 +381,15 @@ export function leverageUpdate(input: {
   if (!position) return { isCross: !asset.onlyIsolated };
   if (position.leverage === leverage) return null;
   return { isCross: position.leverageType === "cross" && !asset.onlyIsolated };
+}
+
+/**
+ * True when a close order closed the whole position: the user asked for
+ * all of it, and the IOC order filled the whole size (an IOC order can
+ * fill only part of it).
+ */
+export function isFullClose(result: OrderResult, fraction: number, positionSize: number): boolean {
+  if (fraction < 1 || result.kind !== "filled") return false;
+  const size = Math.abs(positionSize);
+  return result.totalSz >= size * (1 - 1e-9);
 }
