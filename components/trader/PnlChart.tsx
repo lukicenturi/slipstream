@@ -8,17 +8,23 @@ import { Panel } from "@/components/shared/Panel";
 import { EmptyState, ErrorState } from "@/components/shared/States";
 import { signTone } from "@/components/shared/tone";
 import { Skeleton } from "@/components/ui/skeleton";
+import { drawdownSeries, type MaxDrawdown, maxDrawdown } from "@/lib/calc/drawdown";
 import { toChartSeries } from "@/lib/calc/pnlSeries";
-import { formatUsd } from "@/lib/format";
+import { formatPercent, formatUsd } from "@/lib/format";
 import type { Portfolio, TimeWindow } from "@/lib/hyperliquid/schemas";
 import { cn } from "@/lib/utils";
 
 import type { QueryStatus } from "./TraderHeader";
 
+/** The height of the PnL pane. */
 const CHART_HEIGHT = 220;
+/** The height of the drawdown pane under the PnL pane. */
+const DRAWDOWN_HEIGHT = 56;
+/** The full canvas: the PnL pane keeps its height and the drawdown pane adds to it. */
+const CANVAS_HEIGHT = CHART_HEIGHT + DRAWDOWN_HEIGHT;
 
 function ChartSkeleton() {
-  return <Skeleton className="w-full" style={{ height: CHART_HEIGHT }} />;
+  return <Skeleton className="w-full" style={{ height: CANVAS_HEIGHT }} />;
 }
 
 // lightweight-charts needs the DOM, so the canvas never renders on the server.
@@ -27,7 +33,26 @@ const PnlChartCanvas = dynamic(() => import("./PnlChartCanvas").then((m) => m.Pn
   loading: ChartSkeleton,
 });
 
-/** PnL over the chosen window, with a Day / Week / Month / All toggle. */
+/** "Max DD -$1.2K (-3.40%)". The percent is left out when it is unknown. */
+function MaxDrawdownLabel({ value }: { value: MaxDrawdown }) {
+  return (
+    <span
+      data-testid="pnl-max-drawdown"
+      className="ml-auto text-2xs whitespace-nowrap text-muted-foreground"
+    >
+      Max DD{" "}
+      <span className="font-mono">
+        {formatUsd(value.usd, { compact: true })}
+        {value.ratio === null ? null : ` (${formatPercent(value.ratio)})`}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * PnL over the chosen window, with a Day / Week / Month / All toggle, and
+ * the drawdown from the running peak in a lower pane.
+ */
 export function PnlChart({
   portfolio,
   status,
@@ -42,6 +67,17 @@ export function PnlChart({
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("month");
   const series = useMemo(
     () => (portfolio ? toChartSeries(portfolio[timeWindow].pnlHistory) : []),
+    [portfolio, timeWindow],
+  );
+  const drawdown = useMemo(
+    () => (portfolio ? drawdownSeries(portfolio[timeWindow].pnlHistory) : []),
+    [portfolio, timeWindow],
+  );
+  const maxDd = useMemo(
+    () =>
+      portfolio
+        ? maxDrawdown(portfolio[timeWindow].pnlHistory, portfolio[timeWindow].accountValueHistory)
+        : null,
     [portfolio, timeWindow],
   );
   const last = series[series.length - 1]?.value;
@@ -73,16 +109,22 @@ export function PnlChart({
   } else {
     body = (
       <div className="flex flex-col gap-1 px-3 pt-2 pb-1">
-        <p className="flex items-baseline gap-2">
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span
             data-testid="pnl-window-value"
             className={cn("font-mono text-xl", signTone(last ?? 0))}
           >
             {formatUsd(last ?? 0, { signed: true })}
           </span>
-          <span className="text-2xs text-faint">{WINDOW_LABEL[timeWindow]} PnL</span>
+          <span className="shrink-0 text-2xs text-faint">{WINDOW_LABEL[timeWindow]} PnL</span>
+          {maxDd ? <MaxDrawdownLabel value={maxDd} /> : null}
         </p>
-        <PnlChartCanvas data={series} height={CHART_HEIGHT} />
+        <PnlChartCanvas
+          data={series}
+          drawdown={drawdown}
+          height={CANVAS_HEIGHT}
+          drawdownHeight={DRAWDOWN_HEIGHT}
+        />
         <a
           href="https://www.tradingview.com/"
           target="_blank"

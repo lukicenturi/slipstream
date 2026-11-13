@@ -278,6 +278,22 @@ In a trading build, the user manages each of their own positions from one sheet,
 
 **Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass; `pnpm build` passes in the three modes; in the testnet build a fake wallet and a stand-in agent reach the exchange for the close, the TP/SL (`grouping: "positionTpsl"`, two reduce-only market triggers) and the cancels; the trailing stop sends one `modify` after the mid rises and none after it falls, and ends when its order is gone; the mainnet build sends the same TP/SL body to the mainnet host; 375 px has no horizontal scroll.
 
+## Phase 4n: trader analytics
+
+The trader profile gets four analytics from the data that it already loads (the fills and the portfolio queries), so that a user can judge a trader before a copy trade (2026-11-13, see DECISIONS.md). No new endpoints, no new dependencies.
+
+- [x] `lib/calc/traderStats.ts`: `perpFills` (the one fill filter), `orderPnls`, `holdTimes`, `median`, `tradeStats` (profit factor, average and largest win and loss, fees, orders per day, median hold time, win rate)
+- [x] `lib/calc/assetBreakdown.ts`: `assetBreakdown` (realized PnL, volume, orders and share per coin) and `topAssets` (top 6 plus "Other")
+- [x] `lib/calc/sideSplit.ts`: orders, wins, losses, win rate, volume and share per side; an order takes the side of its first fill
+- [x] `lib/calc/drawdown.ts`: `drawdownSeries` and `maxDrawdown` from `pnlHistory`, with the ratio from the account value at the peak
+- [x] Vitest tests for each module
+- [x] `components/trader/TradeStats.tsx` and `TradeStatsParts.tsx`: the "Trade stats" panel with 8 stat cells, the long / short bar and lines, the asset rows, and loading, empty and error states
+- [x] `TraderProfile.tsx` mounts the panel after the chart row
+- [x] `PnlChart.tsx` and `PnlChartCanvas.tsx`: a drawdown pane under the PnL pane and "Max DD" in the chart header
+- [x] README, DECISIONS and this checklist updated
+
+**Done when:** `pnpm lint && pnpm typecheck && pnpm test` pass; `pnpm build` passes with no variable and with `NEXT_PUBLIC_TRADING_MODE=testnet`; on `/trader/<address>` at 1280 px and 375 px the panel shows 8 stat cells, the side bar and the asset rows, the chart shows "Max DD" and a lower drawdown pane, nothing overflows at 375 px, and an address with no perp fills shows the empty state.
+
 ## Phase 5a: push alerts
 
 Alerts reach the user when no Slipstream tab is open. A Cloudflare Worker (`workers/push/`) with a D1 store polls the tracked addresses once a minute and sends Web Push messages; the app's service worker shows them. Free tiers only.

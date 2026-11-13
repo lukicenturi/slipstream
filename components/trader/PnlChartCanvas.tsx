@@ -15,8 +15,12 @@ import { formatUsd } from "@/lib/format";
 
 /*
  * The canvas part of the PnL chart. It runs only in the browser
- * (PnlChart loads it with next/dynamic and ssr: false).
+ * (PnlChart loads it with next/dynamic and ssr: false). The PnL line is in
+ * the first pane. The drawdown is an area in a second, lower pane.
  */
+
+/** The index of the drawdown pane. */
+const DRAWDOWN_PANE = 1;
 
 interface ChartTokens {
   text: string;
@@ -49,14 +53,22 @@ function readTokens(): ChartTokens {
 
 export function PnlChartCanvas({
   data,
-  height = 220,
+  drawdown,
+  height = 276,
+  drawdownHeight = 56,
 }: {
   data: readonly ChartPoint[];
+  /** The drawdown from the running peak at each point (0 or below). */
+  drawdown: readonly ChartPoint[];
+  /** The full canvas height, both panes. */
   height?: number;
+  /** The height of the drawdown pane. */
+  drawdownHeight?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
+  const drawdownRef = useRef<ISeriesApi<"Area"> | null>(null);
 
   // Create the chart once and resize it with the container.
   useEffect(() => {
@@ -73,6 +85,11 @@ export function PnlChartCanvas({
         fontSize: 11,
         // The TradingView link that the licence asks for is under the chart.
         attributionLogo: false,
+        panes: {
+          separatorColor: tokens.border,
+          separatorHoverColor: tokens.border,
+          enableResize: false,
+        },
       },
       grid: {
         vertLines: { color: tokens.border },
@@ -93,6 +110,23 @@ export function PnlChartCanvas({
       priceLineVisible: false,
       lastValueVisible: true,
     });
+    drawdownRef.current = chart.addSeries(
+      AreaSeries,
+      {
+        lineWidth: 1,
+        lineColor: tokens.short,
+        // The same colour at the top and the bottom: a flat fill, no gradient.
+        topColor: tokens.shortDim,
+        bottomColor: tokens.shortDim,
+        // Fill from the line up to 0, so the area shows the depth of each fall.
+        invertFilledArea: true,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      },
+      DRAWDOWN_PANE,
+    );
+    chart.panes()[DRAWDOWN_PANE]?.setHeight(drawdownHeight);
     chartRef.current = chart;
 
     const observer = new ResizeObserver((entries) => {
@@ -106,8 +140,9 @@ export function PnlChartCanvas({
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      drawdownRef.current = null;
     };
-  }, [height]);
+  }, [height, drawdownHeight]);
 
   // Set the data and colour the line by the sign of the last value.
   useEffect(() => {
@@ -124,8 +159,11 @@ export function PnlChartCanvas({
       bottomColor: fill,
     });
     series.setData(data.map((point) => ({ time: point.time as UTCTimestamp, value: point.value })));
+    drawdownRef.current?.setData(
+      drawdown.map((point) => ({ time: point.time as UTCTimestamp, value: point.value })),
+    );
     chart.timeScale().fitContent();
-  }, [data]);
+  }, [data, drawdown]);
 
   return <div ref={containerRef} data-testid="pnl-chart" className="w-full" style={{ height }} />;
 }
