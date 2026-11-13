@@ -17,11 +17,13 @@ import { PnlChart } from "./PnlChart";
 import { PositionsTable } from "./PositionsTable";
 import { RecentFills } from "./RecentFills";
 import { TraderHeader } from "./TraderHeader";
+import { TradeStats } from "./TradeStats";
 
 /**
  * The trader profile: header and stats, open positions on every perp
  * exchange, balances (perps, builder exchanges and spot), the PnL chart and
- * recent fills. The address is valid and lower-case.
+ * recent fills, and trade stats from the fills. The address is valid and
+ * lower-case.
  */
 export function TraderProfile({ address }: { address: string }) {
   const { state, fills, portfolio } = useTrader(address);
@@ -97,6 +99,13 @@ export function TraderProfile({ address }: { address: string }) {
               />
             </div>
           </div>
+          {/* Desktop: right after the chart row. Mobile: after the balances. */}
+          <TradeStats
+            fills={fills.data}
+            status={fills.status}
+            onRetry={() => void fills.refetch()}
+            className="lg:order-1"
+          />
         </>
       )}
     </div>
